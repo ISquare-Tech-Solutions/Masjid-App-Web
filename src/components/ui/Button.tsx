@@ -24,7 +24,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      'font-urbanist font-medium rounded-[12px] transition-all duration-200 flex items-center justify-center gap-2';
+      'font-inter font-medium rounded-[12px] transition-all duration-200 flex items-center justify-center gap-2';
 
     const variants = {
       primary: 'bg-[var(--brand)] text-white hover:bg-[#065d29] disabled:opacity-50',

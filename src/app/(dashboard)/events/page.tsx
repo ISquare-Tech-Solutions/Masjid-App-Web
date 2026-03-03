@@ -120,7 +120,7 @@ export default function EventsPage() {
             {/* Header */}
             <div className="flex justify-between items-center h-[52px]">
                 <div>
-                    <h1 className="text-[28px] font-urbanist font-bold text-[var(--grey-800)] leading-none tracking-tight">
+                    <h1 className="text-[28px] font-inter font-bold text-[var(--grey-800)] leading-none tracking-tight">
                         Event & Announcements
                     </h1>
                 </div>
@@ -139,7 +139,7 @@ export default function EventsPage() {
                     onClick={() => setActiveTab('events')}
                     className={`
                         w-[250px] h-full flex items-center justify-center 
-                        font-urbanist text-[18px] transition-all duration-300 relative
+                        font-inter text-[18px] transition-all duration-300 relative
                         ${activeTab === 'events'
                             ? 'text-[var(--brand)] font-semibold border-b-[2px] border-[var(--brand)] bg-white/50'
                             : 'text-[var(--grey-800)] font-normal border-b-[2px] border-transparent hover:text-[var(--brand)] hover:bg-white/30'
@@ -152,7 +152,7 @@ export default function EventsPage() {
                     onClick={() => setActiveTab('announcements')}
                     className={`
                         w-[250px] h-full flex items-center justify-center 
-                        font-urbanist text-[18px] transition-all duration-300 relative
+                        font-inter text-[18px] transition-all duration-300 relative
                         ${activeTab === 'announcements'
                             ? 'text-[var(--brand)] font-semibold border-b-[2px] border-[var(--brand)] bg-white/50'
                             : 'text-[var(--grey-800)] font-normal border-b-[2px] border-transparent hover:text-[var(--brand)] hover:bg-white/30'
@@ -176,7 +176,7 @@ export default function EventsPage() {
                                             key={filter}
                                             onClick={() => setActiveFilter(filter as any)}
                                             className={`
-                                        h-[40px] px-[16px] py-[10px] font-urbanist text-[14px] 
+                                        h-[40px] px-[16px] py-[10px] font-inter text-[14px] 
                                         border border-[var(--border-01)] bg-[#fafbfb]
                                         transition-all duration-200 flex items-center justify-center gap-[8px]
                                         hover:bg-gray-50
@@ -213,7 +213,7 @@ export default function EventsPage() {
                                         <input
                                             type="text"
                                             placeholder="Search Events"
-                                            className="w-full h-full pl-[38px] pr-[14px] border border-[var(--border-01)] rounded-[11px] font-urbanist text-[12px] text-[#666d80] placeholder-[#666d80] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 focus:border-[var(--brand)] transition-all"
+                                            className="w-full h-full pl-[38px] pr-[14px] border border-[var(--border-01)] rounded-[11px] font-inter text-[12px] text-[#666d80] placeholder-[#666d80] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 focus:border-[var(--brand)] transition-all"
                                         />
                                         <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-[var(--grey-400)]">
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -233,12 +233,12 @@ export default function EventsPage() {
                                             <th className="w-[52px] px-[16px] py-[14px] border-r border-[var(--border-01)]">
                                                 <input type="checkbox" className="w-[20px] h-[20px] rounded-[4px] border-[#e6e6e6] text-[var(--brand)] focus:ring-0 checked:bg-[var(--brand)] cursor-pointer transition-colors" />
                                             </th>
-                                            <th className="px-[16px] py-[14px] font-urbanist font-medium text-[12px] text-[#667085] uppercase tracking-wide border-r border-[var(--border-01)]">Title</th>
-                                            <th className="px-[16px] py-[14px] font-urbanist font-medium text-[12px] text-[#667085] uppercase tracking-wide border-r border-[var(--border-01)]">Date & Time</th>
-                                            <th className="px-[16px] py-[14px] font-urbanist font-medium text-[12px] text-[#667085] uppercase tracking-wide border-r border-[var(--border-01)]">Message</th>
-                                            <th className="px-[16px] py-[14px] font-urbanist font-medium text-[12px] text-[#667085] uppercase tracking-wide border-r border-[var(--border-01)]">Type</th>
-                                            <th className="px-[16px] py-[14px] font-urbanist font-medium text-[12px] text-[#667085] uppercase tracking-wide border-r border-[var(--border-01)]">Status</th>
-                                            <th className="px-[16px] py-[14px] font-urbanist font-medium text-[12px] text-[#667085] uppercase tracking-wide">Action</th>
+                                            <th className="px-[16px] py-[14px] font-inter font-medium text-[12px] text-[#667085] uppercase tracking-wide border-r border-[var(--border-01)]">Title</th>
+                                            <th className="px-[16px] py-[14px] font-inter font-medium text-[12px] text-[#667085] uppercase tracking-wide border-r border-[var(--border-01)]">Date & Time</th>
+                                            <th className="px-[16px] py-[14px] font-inter font-medium text-[12px] text-[#667085] uppercase tracking-wide border-r border-[var(--border-01)]">Message</th>
+                                            <th className="px-[16px] py-[14px] font-inter font-medium text-[12px] text-[#667085] uppercase tracking-wide border-r border-[var(--border-01)]">Type</th>
+                                            <th className="px-[16px] py-[14px] font-inter font-medium text-[12px] text-[#667085] uppercase tracking-wide border-r border-[var(--border-01)]">Status</th>
+                                            <th className="px-[16px] py-[14px] font-inter font-medium text-[12px] text-[#667085] uppercase tracking-wide">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-none bg-white">
@@ -247,16 +247,16 @@ export default function EventsPage() {
                                                 <td className="w-[52px] h-[70px] border-b border-[var(--border-01)] px-[16px] py-[22px] border-r">
                                                     <input type="checkbox" className="w-[20px] h-[20px] rounded-[4px] border-[#e6e6e6] text-[var(--brand)] focus:ring-0 checked:bg-[var(--brand)] cursor-pointer transition-colors" />
                                                 </td>
-                                                <td className="h-[70px] px-[16px] py-[22px] border-b border-r border-[var(--border-01)] font-urbanist font-medium text-[14px] text-[#36394a]">
+                                                <td className="h-[70px] px-[16px] py-[22px] border-b border-r border-[var(--border-01)] font-inter font-medium text-[14px] text-[#36394a]">
                                                     {event.title}
                                                 </td>
-                                                <td className="h-[70px] px-[16px] py-[22px] border-b border-r border-[var(--border-01)] font-urbanist font-medium text-[14px] text-[#666d80]">
+                                                <td className="h-[70px] px-[16px] py-[22px] border-b border-r border-[var(--border-01)] font-inter font-medium text-[14px] text-[#666d80]">
                                                     {event.date}  <span className="ml-1 text-[#666d80] opacity-80">{event.startTime}</span>
                                                 </td>
-                                                <td className="h-[70px] px-[16px] py-[22px] border-b border-r border-[var(--border-01)] font-urbanist font-medium text-[14px] text-[#666d80] truncate max-w-[200px]" title={event.description}>
+                                                <td className="h-[70px] px-[16px] py-[22px] border-b border-r border-[var(--border-01)] font-inter font-medium text-[14px] text-[#666d80] truncate max-w-[200px]" title={event.description}>
                                                     {event.description}
                                                 </td>
-                                                <td className="h-[70px] px-[16px] py-[22px] border-b border-r border-[var(--border-01)] font-urbanist font-medium text-[14px] text-[#666d80]">
+                                                <td className="h-[70px] px-[16px] py-[22px] border-b border-r border-[var(--border-01)] font-inter font-medium text-[14px] text-[#666d80]">
                                                     {event.category}
                                                 </td>
                                                 <td className="h-[70px] px-[16px] py-[22px] border-b border-r border-[var(--border-01)]">

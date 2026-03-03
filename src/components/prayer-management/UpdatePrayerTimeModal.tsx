@@ -218,94 +218,89 @@ export default function UpdatePrayerTimeModal({ prayerTime, onClose, onSuccess }
             {/* Backdrop */}
             <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
-            {/* Modal Panel */}
-            <div className="relative bg-white rounded-[24px] w-full max-w-[1020px] max-h-[90vh] overflow-y-auto shadow-2xl border border-[var(--border-01)]">
+            {/* Modal Panel — Figma: p-[24px] gap-[24px] rounded-[24px] border */}
+            <div className="relative bg-white rounded-[24px] w-full max-w-[1020px] shadow-2xl border border-[var(--border-01)] p-[24px] flex flex-col gap-[24px]" style={{ overflow: 'visible' }}>
 
-                {/* ── Header ── */}
-                <div className="flex items-center justify-between px-8 pt-7 pb-4">
-                    <h2 className="font-urbanist font-bold text-[22px] text-[var(--grey-800)]">
-                        {isUpdateMode ? 'Update Prayer Time' : 'Add Prayer Time'}
+                {/* ── Header — Figma: flex justify-between ── */}
+                <div className="flex items-start justify-between">
+                    <h2 className="font-inter font-bold text-[24px] text-[#1f1f1f] leading-normal">
+                        Add/Update Prayer Time
                     </h2>
                     <button
                         onClick={onClose}
-                        className="w-[36px] h-[36px] flex items-center justify-center border border-[var(--border-01)] rounded-[8px] hover:bg-[var(--neutral-100)] transition-colors cursor-pointer"
+                        className="w-[36px] h-[36px] flex items-center justify-center bg-[rgba(7,119,52,0.1)] rounded-[8px] hover:bg-[rgba(7,119,52,0.2)] transition-colors cursor-pointer shrink-0"
                     >
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <path d="M12 4L4 12M4 4l8 8" stroke="var(--grey-800)" strokeWidth="1.5" strokeLinecap="round" />
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                            <path d="M11 3L3 11M3 3l8 8" stroke="#36394a" strokeWidth="1.5" strokeLinecap="round" />
                         </svg>
                     </button>
                 </div>
 
-                {/* ── Content ── */}
-                <div className="px-8 pb-2">
+                {/* ── Date Range Field — Figma: gap-[8px], label 16px semibold #4b4b4b ── */}
+                <div className="flex flex-col gap-[8px]">
+                    <label className="font-inter font-semibold text-[16px] text-[#4b4b4b] tracking-[0.16px] leading-none">
+                        Date Range
+                    </label>
+                    <button
+                        onClick={() => !isEditing && setShowDatePicker(true)}
+                        className={`flex items-center justify-between w-full h-[48px] px-[16px] border border-[var(--border-01)] rounded-[12px]
+                            font-inter text-[16px] text-[var(--grey-800)] transition-colors
+                            ${isEditing ? 'bg-[var(--neutral-100)] cursor-default' : 'bg-white hover:border-[var(--brand)] cursor-pointer'}`}
+                    >
+                        <span>{dateDisplayStr}</span>
+                        <svg width="22" height="22" viewBox="0 0 22 22" fill="none" className="shrink-0">
+                            <rect x="2" y="3" width="18" height="16" rx="2" stroke="var(--neutral-500)" strokeWidth="1.3" />
+                            <path d="M2 8h18" stroke="var(--neutral-500)" strokeWidth="1.3" />
+                            <path d="M7 1.5v3M15 1.5v3" stroke="var(--neutral-500)" strokeWidth="1.3" strokeLinecap="round" />
+                        </svg>
+                    </button>
+                </div>
 
-                    {/* ── Date Range Field ── */}
-                    <div className="mb-6">
-                        <label className="block font-urbanist font-medium text-[14px] text-[var(--grey-800)] mb-2">
-                            Date Range
-                        </label>
-                        <button
-                            onClick={() => !isEditing && setShowDatePicker(true)}
-                            className={`flex items-center justify-between w-full max-w-[580px] p-[12px] border border-[var(--border-01)] rounded-full
-                                font-urbanist text-[15px] text-[var(--grey-800)] transition-colors
-                                ${isEditing ? 'bg-[var(--neutral-100)] cursor-default' : 'bg-white hover:border-[var(--brand)] cursor-pointer'}`}
-                        >
-                            <span>{dateDisplayStr}</span>
-                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="shrink-0 ml-2">
-                                <rect x="2" y="3" width="16" height="14" rx="2" stroke="var(--neutral-500)" strokeWidth="1.3" />
-                                <path d="M2 7.5h16" stroke="var(--neutral-500)" strokeWidth="1.3" />
-                                <path d="M6 1.5v3M14 1.5v3" stroke="var(--neutral-500)" strokeWidth="1.3" strokeLinecap="round" />
-                            </svg>
-                        </button>
-                    </div>
+                {/* ── Tab Switcher — Figma: bg rgba(7,119,52,0.05), text 18px ── */}
+                <div className="bg-[rgba(7,119,52,0.05)] flex">
+                    <button
+                        onClick={() => setActiveTab('daily')}
+                        className={`flex-1 p-[16px] font-inter text-[18px] text-center transition-colors relative cursor-pointer
+                            ${activeTab === 'daily'
+                                ? 'text-[var(--brand)] font-normal'
+                                : 'text-[#667085] font-normal hover:text-[var(--grey-800)]'
+                            }`}
+                    >
+                        Daily Prayer
+                        {activeTab === 'daily' && (
+                            <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--brand)]" />
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('jumuah')}
+                        className={`flex-1 p-[16px] font-inter text-[18px] text-center transition-colors relative cursor-pointer
+                            ${activeTab === 'jumuah'
+                                ? 'text-[var(--brand)] font-normal'
+                                : 'text-[#667085] font-normal hover:text-[var(--grey-800)]'
+                            }`}
+                    >
+                        Jumuah
+                        {activeTab === 'jumuah' && (
+                            <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--brand)]" />
+                        )}
+                    </button>
+                </div>
 
-                    {/* ── Tab Switcher — green tinted bg ── */}
-                    <div className="bg-[var(--brand-05)] rounded-t-[8px] flex mb-0">
-                        <button
-                            onClick={() => setActiveTab('daily')}
-                            className={`flex-1 py-3.5 font-urbanist font-semibold text-[15px] text-center transition-colors relative cursor-pointer
-                                ${activeTab === 'daily'
-                                    ? 'text-[var(--brand)]'
-                                    : 'text-[var(--neutral-500)] hover:text-[var(--grey-800)]'
-                                }`}
-                        >
-                            Daily Prayer
-                            {activeTab === 'daily' && (
-                                <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-[var(--brand)]" />
-                            )}
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('jumuah')}
-                            className={`flex-1 py-3.5 font-urbanist font-semibold text-[15px] text-center transition-colors relative cursor-pointer
-                                ${activeTab === 'jumuah'
-                                    ? 'text-[var(--brand)]'
-                                    : 'text-[var(--neutral-500)] hover:text-[var(--grey-800)]'
-                                }`}
-                        >
-                            Jumuah
-                            {activeTab === 'jumuah' && (
-                                <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-[var(--brand)]" />
-                            )}
-                        </button>
-                    </div>
+                {/* ═══════════════════════════════════════
+                   Daily Prayer Tab — 6 Columns, Figma: flex-wrap gap-[24px]
+                   ═══════════════════════════════════════ */}
+                {activeTab === 'daily' && (
+                    <div className="flex flex-wrap gap-[24px]">
+                        {PRAYER_COLS.map(({ key, label, hasJamah }) => (
+                            <div key={key} className="flex-1 min-w-[120px] flex flex-col gap-[16px]">
+                                {/* Prayer Name — Figma: 20px medium uppercase */}
+                                <p className="font-inter font-medium text-[20px] text-[var(--grey-800)] uppercase leading-normal">
+                                    {label}
+                                </p>
 
-                    {/* Green bottom border under tabs */}
-                    <div className="h-[1px] bg-[var(--brand)] mb-6" />
-
-                    {/* ═══════════════════════════════════════
-                       Daily Prayer Tab — 6 Columns Layout
-                       ═══════════════════════════════════════ */}
-                    {activeTab === 'daily' && (
-                        <div className="grid grid-cols-6 gap-5 mb-4">
-                            {PRAYER_COLS.map(({ key, label, hasJamah }) => (
-                                <div key={key} className="flex flex-col">
-                                    {/* Prayer Name */}
-                                    <p className="font-urbanist font-bold text-[15px] text-[var(--grey-800)] uppercase mb-3">
-                                        {label}
-                                    </p>
-
-                                    {/* Begins */}
-                                    <label className="font-urbanist font-medium text-[13px] text-[var(--brand)] mb-1.5">
+                                {/* Begins — Figma: label 16px medium #666d80, input h-[48px] rounded-[12px] */}
+                                <div className="flex flex-col gap-[6px]">
+                                    <label className="font-inter font-medium text-[16px] text-[#666d80] leading-normal">
                                         Begins
                                     </label>
                                     <TimePicker
@@ -313,9 +308,11 @@ export default function UpdatePrayerTimeModal({ prayerTime, onClose, onSuccess }
                                         onChange={(val) => handlePrayerChange(key, 'athan', val)}
                                         placeholder="00:00"
                                     />
+                                </div>
 
-                                    {/* Jama'h */}
-                                    <label className="font-urbanist font-medium text-[13px] text-[var(--brand)] mt-4 mb-1.5">
+                                {/* Jama'h — Figma: label 16px medium #666d80 */}
+                                <div className={`flex flex-col gap-[6px] ${key === 'sunrise' ? 'opacity-0 pointer-events-none' : ''}`}>
+                                    <label className="font-inter font-medium text-[16px] text-[#666d80] leading-normal">
                                         Jama&apos;h
                                     </label>
                                     {hasJamah ? (
@@ -332,141 +329,143 @@ export default function UpdatePrayerTimeModal({ prayerTime, onClose, onSuccess }
                                         />
                                     )}
                                 </div>
-                            ))}
-                        </div>
-                    )}
+                            </div>
+                        ))}
+                    </div>
+                )}
 
-                    {/* ═══════════════════════════════════════
-                       Jumuah Tab
-                       ═══════════════════════════════════════ */}
-                    {activeTab === 'jumuah' && (
-                        <div className="mb-4">
-                            <div className="flex items-start gap-8">
-                                {/* JUMU'AH 1 (or JUMUAH if only one) */}
-                                <div className="flex flex-col">
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <p className="font-urbanist font-bold text-[15px] text-[var(--grey-800)] uppercase">
-                                            {jumuahTimes.length > 1 ? "JUMU'AH 1" : 'JUMUAH'}
-                                        </p>
-                                    </div>
+                {/* ═══════════════════════════════════════
+                   Jumuah Tab
+                   ═══════════════════════════════════════ */}
+                {activeTab === 'jumuah' && (
+                    <div>
+                        <div className="flex items-end gap-[24px]">
+                            {/* JUMU'AH 1 (or JUMUAH if only one) */}
+                            <div className="w-[150px] shrink-0 flex flex-col gap-[16px]">
+                                <p className="font-inter font-medium text-[20px] text-[var(--grey-800)] uppercase leading-normal">
+                                    {jumuahTimes.length > 1 ? "JUMU'AH 1" : 'JUMUAH'}
+                                </p>
 
-                                    <label className="font-urbanist font-medium text-[13px] text-[var(--brand)] mb-1.5">
+                                <div className="flex flex-col gap-[6px]">
+                                    <label className="font-inter font-medium text-[16px] text-[#666d80] leading-normal">
                                         Begins
                                     </label>
-                                    <div className="w-[150px]">
+                                    <TimePicker
+                                        value={jumuahTimes[0]?.begins || ''}
+                                        onChange={(val) => handleJumuahChange(0, 'begins', val)}
+                                        placeholder="00:00"
+                                    />
+                                </div>
+
+                                <div className="flex flex-col gap-[6px]">
+                                    <label className="font-inter font-medium text-[16px] text-[#666d80] leading-normal">
+                                        Jama&apos;h
+                                    </label>
+                                    <TimePicker
+                                        value={jumuahTimes[0]?.jamah || ''}
+                                        onChange={(val) => handleJumuahChange(0, 'jamah', val)}
+                                        placeholder="00:00"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* JUMU'AH 2 — or Add Button */}
+                            {jumuahTimes.length < 2 ? (
+                                /* Dashed "Add 2nd Jumuah" box — Figma: rounded-[24px] h-[161px] p-[24px] gap-[16px] */
+                                <button
+                                    onClick={addSecondJumuah}
+                                    className="flex flex-col items-center justify-center gap-[16px]
+                                        h-[161px] px-[24px]
+                                        border border-dashed border-[var(--brand)] rounded-[24px]
+                                        text-[var(--brand)] hover:bg-[var(--brand-05)] transition-colors cursor-pointer"
+                                >
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                        <path d="M12 5v14M5 12h14" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" />
+                                    </svg>
+                                    <span className="font-inter font-normal text-[18px]">
+                                        2<sup className="text-[11.6px]">nd</sup> Jumuah
+                                    </span>
+                                </button>
+                            ) : (
+                                /* Second Jumuah inputs */
+                                <div className="w-[150px] shrink-0 flex flex-col gap-[16px]">
+                                    <div className="flex items-center gap-2">
+                                        <p className="font-inter font-medium text-[20px] text-[var(--grey-800)] uppercase leading-normal">
+                                            JUMU&apos;AH 2
+                                        </p>
+                                        {/* Delete icon */}
+                                        <button
+                                            onClick={removeSecondJumuah}
+                                            className="p-1 hover:bg-red-50 rounded-[6px] transition-colors cursor-pointer"
+                                            title="Remove 2nd Jumuah"
+                                        >
+                                            <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                                                <path d="M3 5h14M6 5V3.5A1.5 1.5 0 0 1 7.5 2h5A1.5 1.5 0 0 1 14 3.5V5m2 0v11.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 4 16.5V5h12Z"
+                                                    stroke="#EF4444" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                        </button>
+                                    </div>
+
+                                    <div className="flex flex-col gap-[6px]">
+                                        <label className="font-inter font-medium text-[16px] text-[#666d80] leading-normal">
+                                            Begins
+                                        </label>
                                         <TimePicker
-                                            value={jumuahTimes[0]?.begins || ''}
-                                            onChange={(val) => handleJumuahChange(0, 'begins', val)}
+                                            value={jumuahTimes[1]?.begins || ''}
+                                            onChange={() => { }} // Read-only, changes sync from first
+                                            disabled={true}
                                             placeholder="00:00"
                                         />
                                     </div>
 
-                                    <label className="font-urbanist font-medium text-[13px] text-[var(--brand)] mt-4 mb-1.5">
-                                        Jama&apos;h
-                                    </label>
-                                    <div className="w-[150px]">
+                                    <div className="flex flex-col gap-[6px]">
+                                        <label className="font-inter font-medium text-[16px] text-[#666d80] leading-normal">
+                                            Jama&apos;h
+                                        </label>
                                         <TimePicker
-                                            value={jumuahTimes[0]?.jamah || ''}
-                                            onChange={(val) => handleJumuahChange(0, 'jamah', val)}
+                                            value={jumuahTimes[1]?.jamah || ''}
+                                            onChange={(val) => handleJumuahChange(1, 'jamah', val)}
                                             placeholder="00:00"
                                         />
                                     </div>
                                 </div>
-
-                                {/* JUMU'AH 2 — or Add Button */}
-                                {jumuahTimes.length < 2 ? (
-                                    /* Dashed "Add 2nd Jumuah" box */
-                                    <button
-                                        onClick={addSecondJumuah}
-                                        className="flex flex-col items-center justify-center gap-2
-                                            w-[160px] h-[160px] mt-5
-                                            border-2 border-dashed border-[var(--brand)] rounded-[12px]
-                                            text-[var(--brand)] hover:bg-[var(--brand-05)] transition-colors cursor-pointer"
-                                    >
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                            <path d="M12 5v14M5 12h14" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" />
-                                        </svg>
-                                        <span className="font-urbanist font-medium text-[14px]">
-                                            2<sup>nd</sup> Jumuah
-                                        </span>
-                                    </button>
-                                ) : (
-                                    /* Second Jumuah inputs */
-                                    <div className="flex flex-col">
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <p className="font-urbanist font-bold text-[15px] text-[var(--grey-800)] uppercase">
-                                                JUMU&apos;AH 2
-                                            </p>
-                                            {/* Delete icon */}
-                                            <button
-                                                onClick={removeSecondJumuah}
-                                                className="p-1 hover:bg-red-50 rounded-[6px] transition-colors cursor-pointer"
-                                                title="Remove 2nd Jumuah"
-                                            >
-                                                <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                                                    <path d="M3 5h14M6 5V3.5A1.5 1.5 0 0 1 7.5 2h5A1.5 1.5 0 0 1 14 3.5V5m2 0v11.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 4 16.5V5h12Z"
-                                                        stroke="#EF4444" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-                                                </svg>
-                                            </button>
-                                        </div>
-
-                                        <label className="font-urbanist font-medium text-[13px] text-[var(--brand)] mb-1.5">
-                                            Begins
-                                        </label>
-                                        <div className="w-[150px]">
-                                            <TimePicker
-                                                value={jumuahTimes[1]?.begins || ''}
-                                                onChange={() => { }} // Read-only, changes sync from first
-                                                disabled={true}
-                                                placeholder="00:00"
-                                            />
-                                        </div>
-
-                                        <label className="font-urbanist font-medium text-[13px] text-[var(--brand)] mt-4 mb-1.5">
-                                            Jama&apos;h
-                                        </label>
-                                        <div className="w-[150px]">
-                                            <TimePicker
-                                                value={jumuahTimes[1]?.jamah || ''}
-                                                onChange={(val) => handleJumuahChange(1, 'jamah', val)}
-                                                placeholder="00:00"
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+                            )}
                         </div>
-                    )}
+                    </div>
+                )}
 
-                    {/* Error */}
-                    {error && (
-                        <p className="mt-2 font-urbanist text-[13px] text-[var(--error)]">{error}</p>
-                    )}
+                {/* Error */}
+                {error && (
+                    <p className="font-inter text-[13px] text-[var(--error)]">{error}</p>
+                )}
 
-                    {/* Note */}
-                    <p className="mt-4 mb-2 font-urbanist text-[12px] italic text-[var(--neutral-500)]">
+                {/* ── Footer — Figma: justify-between, note left, buttons right, pt-[48px] ── */}
+                <div className="flex items-end justify-between pt-[24px]">
+                    <p className="font-inter text-[12px] text-[#696969] leading-normal">
                         *Whatever the changes saved, it&apos;ll automatically reflect in the Mobile App.*
                     </p>
-                </div>
-
-                {/* ── Footer ── */}
-                <div className="flex items-center justify-end gap-3 px-8 py-5">
-                    <button
-                        onClick={onClose}
-                        disabled={saving}
-                        className="px-8 py-2.5 border border-[var(--border-01)] text-[var(--grey-800)] rounded-[8px]
-                            font-urbanist font-semibold text-[14px] hover:bg-[var(--neutral-100)] transition-colors disabled:opacity-50 cursor-pointer"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="px-8 py-2.5 bg-[var(--brand)] text-white rounded-[8px]
-                            font-urbanist font-semibold text-[14px] hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer"
-                    >
-                        {saving ? 'Saving...' : 'Save'}
-                    </button>
+                    <div className="flex items-center gap-[24px] shrink-0">
+                        <button
+                            onClick={onClose}
+                            disabled={saving}
+                            className="h-[44px] px-[24px] py-[16px] border border-[var(--border-01)] rounded-[12px]
+                                font-inter font-medium text-[16px] text-[#4b4b4b] text-center
+                                hover:bg-[var(--neutral-100)] transition-colors disabled:opacity-50 cursor-pointer
+                                flex items-center justify-center gap-[10px]"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="h-[44px] px-[24px] py-[16px] bg-[var(--brand)] rounded-[12px]
+                                font-inter font-medium text-[16px] text-white text-center
+                                hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer
+                                flex items-center justify-center gap-[10px]"
+                        >
+                            {saving ? 'Saving...' : 'Save'}
+                        </button>
+                    </div>
                 </div>
             </div>
 

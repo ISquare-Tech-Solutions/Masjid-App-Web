@@ -25,7 +25,7 @@ const NavItem = ({ label, href, icon, isActive = false }: NavItemProps) => (
   <Link
     href={href}
     className={`
-      flex items-center gap-2 px-4 py-3 rounded-[12px] transition-colors shrink-0
+      flex items-center gap-2 px-[16px] py-[12px] rounded-[12px] transition-colors shrink-0
       ${isActive
         ? 'bg-[var(--brand-10)] text-[var(--brand)]'
         : 'text-[var(--grey-800)] hover:bg-[var(--neutral-100)]'
@@ -33,7 +33,7 @@ const NavItem = ({ label, href, icon, isActive = false }: NavItemProps) => (
     `}
   >
     <span className={isActive ? 'text-[var(--brand)]' : 'text-[var(--grey-800)]'}>{icon}</span>
-    <span className={`font-urbanist text-[14px] whitespace-nowrap ${isActive ? 'font-semibold' : 'font-medium'}`}>
+    <span className={`font-inter text-[14px] leading-normal whitespace-nowrap ${isActive ? 'font-medium' : 'font-normal'}`}>
       {label}
     </span>
   </Link>
@@ -101,10 +101,10 @@ export default function Header({ activeNav = 'dashboard' }: HeaderProps) {
     .slice(0, 2) || '?';
 
   return (
-    <header className="w-full bg-white shadow-[0_4px_21px_rgba(0,0,0,0.1)]">
-      <div className="max-w-[1440px] mx-auto px-4 lg:px-[60px] py-4 flex items-center justify-between h-[100px] gap-4">
-        {/* Logo */}
-        <Link href="/dashboard" className="relative w-[68px] h-[68px] shrink-0">
+    <header className="w-full bg-white border-b border-[var(--border-01)]">
+      <div className="max-w-[1440px] mx-auto px-[60px] py-[16px] flex items-center justify-between">
+        {/* Logo — 52x52 per Figma */}
+        <Link href="/dashboard" className="relative w-[52px] h-[52px] shrink-0">
           <Image
             src="/images/nwk-logo.png"
             alt="NWK Muslim Association"
@@ -113,40 +113,35 @@ export default function Header({ activeNav = 'dashboard' }: HeaderProps) {
           />
         </Link>
 
-        {/* Navigation */}
-        <nav className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 lg:pb-0 flex-1 lg:flex-none">
+        {/* Navigation — gap-[28px] between nav items per Figma */}
+        <nav className="flex items-center gap-[28px] overflow-x-auto scrollbar-hide flex-1 lg:flex-none justify-center">
           {navItems.map((item) => (
             <NavItem key={item.href} {...item} />
           ))}
         </nav>
 
-        {/* Right Side - Notification & User */}
-        <div className="flex items-center gap-6">
+        {/* Right Side - Notification & User — gap-[24px] per Figma */}
+        <div className="flex items-center gap-[24px]">
           {/* Notification Bell */}
-          <button className="relative p-2 hover:bg-[var(--neutral-100)] rounded-full transition-colors">
+          <button className="relative p-0 hover:opacity-80 transition-opacity">
             <BellIcon size={20} className="text-[var(--grey-800)]" />
             {/* Notification Badge */}
-            <span className="absolute top-1 right-1 w-2 h-2 bg-[var(--auxiliary-700)] rounded-full" />
+            <span className="absolute -top-0.5 -right-0.5 w-[9px] h-[9px] bg-[#ff8156] border-[1.5px] border-[var(--table-white)] rounded-full" />
           </button>
 
           {/* User Avatar & Dropdown */}
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+              className="flex items-center gap-[12px] hover:opacity-80 transition-opacity"
             >
-              {/* Initials Avatar */}
+              {/* Initials Avatar — 40x40, rounded-full per Figma */}
               <div className="w-[40px] h-[40px] rounded-full bg-[var(--brand)] flex items-center justify-center">
-                <span className="font-urbanist font-semibold text-[14px] text-white">
+                <span className="font-inter font-semibold text-[14px] text-white">
                   {initials}
                 </span>
               </div>
-              {user && (
-                <span className="font-urbanist font-medium text-[14px] text-[var(--grey-800)] hidden lg:block">
-                  {user.fullName}
-                </span>
-              )}
-              <ChevronDownIcon size={16} className="text-[var(--grey-800)]" />
+              <ChevronDownIcon size={20} className="text-[var(--grey-800)]" />
             </button>
 
             {/* Dropdown Menu */}
@@ -155,31 +150,31 @@ export default function Header({ activeNav = 'dashboard' }: HeaderProps) {
                 {/* User info section */}
                 {user && (
                   <div className="px-4 py-2 border-b border-[var(--border-01)]">
-                    <p className="font-urbanist font-semibold text-[14px] text-[var(--grey-800)]">
+                    <p className="font-inter font-semibold text-[14px] text-[var(--grey-800)]">
                       {user.fullName}
                     </p>
-                    <p className="font-urbanist text-[12px] text-[var(--neutral-500)]">
+                    <p className="font-inter text-[12px] text-[var(--neutral-500)]">
                       {user.email}
                     </p>
                   </div>
                 )}
                 <Link
                   href="/profile"
-                  className="block px-4 py-2 font-urbanist text-[14px] text-[var(--grey-800)] hover:bg-[var(--neutral-100)]"
+                  className="block px-4 py-2 font-inter text-[14px] text-[var(--grey-800)] hover:bg-[var(--neutral-100)]"
                   onClick={() => setShowUserMenu(false)}
                 >
                   Profile
                 </Link>
                 <Link
                   href="/settings"
-                  className="block px-4 py-2 font-urbanist text-[14px] text-[var(--grey-800)] hover:bg-[var(--neutral-100)]"
+                  className="block px-4 py-2 font-inter text-[14px] text-[var(--grey-800)] hover:bg-[var(--neutral-100)]"
                   onClick={() => setShowUserMenu(false)}
                 >
                   Settings
                 </Link>
                 <hr className="my-2 border-[var(--border-01)]" />
                 <button
-                  className="w-full text-left px-4 py-2 font-urbanist text-[14px] text-[var(--auxiliary-700)] hover:bg-[var(--neutral-100)]"
+                  className="w-full text-left px-4 py-2 font-inter text-[14px] text-[var(--auxiliary-700)] hover:bg-[var(--neutral-100)]"
                   onClick={() => {
                     setShowUserMenu(false);
                     logout();

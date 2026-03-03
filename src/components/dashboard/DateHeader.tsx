@@ -20,11 +20,11 @@ export default function DateHeader({
   onJumpToToday,
 }: DateHeaderProps) {
   return (
-    <div className="flex items-center justify-between bg-[var(--brand-05)] px-4 py-2 rounded-[12px] w-full">
+    <div className="flex items-center justify-between w-full px-[16px] py-[8px]">
       {/* Previous Day Button */}
       <button
         onClick={onPrevDay}
-        className="p-[6px] border border-[rgba(7,119,52,0.5)] rounded-[8px] hover:bg-[var(--brand-10)] transition-colors flex items-center justify-center bg-white"
+        className="p-[6px] border border-[rgba(7,119,52,0.5)] rounded-[8px] hover:bg-[var(--brand-10)] transition-colors flex items-center justify-center"
         aria-label="Previous Day"
       >
         <ChevronLeftIcon size={24} className="text-[var(--grey-800)] stroke-[1.5]" />
@@ -32,21 +32,21 @@ export default function DateHeader({
 
       {/* Date Display */}
       <div className="flex flex-col items-center justify-center gap-[2px]">
-        <div className="flex flex-col sm:flex-row items-center sm:items-start justify-center gap-[4px] text-center sm:text-left">
-          <h2 className="font-urbanist font-semibold text-[16px] sm:text-[20px] text-[var(--grey-800)] leading-tight sm:leading-none">
+        <div className="flex items-start justify-center gap-[4px]">
+          <h2 className="font-inter font-semibold text-[20px] text-[var(--grey-800)] leading-normal">
             {gregorianDate}
           </h2>
           <button
             onClick={() => !isToday && onJumpToToday?.()}
             className={`
-              font-urbanist text-[12px] font-bold text-[var(--brand)] uppercase tracking-wide mt-[2px]
+              font-inter font-semibold text-[12px] text-[var(--brand)] text-center leading-normal
               ${!isToday ? 'cursor-pointer hover:underline' : 'cursor-default'}
             `}
           >
             {isToday ? 'TODAY' : 'GO TO TODAY'}
           </button>
         </div>
-        <p className="font-urbanist font-semibold text-[16px] text-[var(--brand)] leading-none">
+        <p className="font-inter font-semibold text-[16px] text-[var(--brand)] text-center leading-normal">
           {islamicDate}
         </p>
       </div>
@@ -54,7 +54,7 @@ export default function DateHeader({
       {/* Next Day Button */}
       <button
         onClick={onNextDay}
-        className="p-[6px] border border-[rgba(7,119,52,0.5)] rounded-[8px] hover:bg-[var(--brand-10)] transition-colors flex items-center justify-center bg-white"
+        className="p-[6px] border border-[rgba(7,119,52,0.5)] rounded-[8px] hover:bg-[var(--brand-10)] transition-colors flex items-center justify-center"
         aria-label="Next Day"
       >
         <ChevronRightIcon size={24} className="text-[var(--grey-800)] stroke-[1.5]" />

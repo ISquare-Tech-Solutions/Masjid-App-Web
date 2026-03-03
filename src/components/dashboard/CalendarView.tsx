@@ -83,7 +83,7 @@ export default function CalendarView({
             <div className="flex justify-between items-center mb-[24px] h-[40px]">
                 {/* Date Nav */}
                 <div className="flex items-center gap-[24px]">
-                    <h2 className="text-[24px] font-urbanist font-semibold text-[var(--grey-800)]">
+                    <h2 className="text-[24px] font-inter font-semibold text-[var(--grey-800)]">
                         {monthNames[month]} {year}
                     </h2>
                     <div className="flex items-center gap-[18px]">
@@ -116,7 +116,7 @@ export default function CalendarView({
                         <input
                             type="text"
                             placeholder="Search Events"
-                            className="w-full h-full pl-[38px] pr-[14px] border border-[var(--border-01)] rounded-[11px] font-urbanist text-[12px] text-[#666d80] placeholder-[#666d80] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 focus:border-[var(--brand)] transition-all"
+                            className="w-full h-full pl-[38px] pr-[14px] border border-[var(--border-01)] rounded-[11px] font-inter text-[12px] text-[#666d80] placeholder-[#666d80] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 focus:border-[var(--brand)] transition-all"
                         />
                         <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-[var(--grey-400)]">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -130,7 +130,7 @@ export default function CalendarView({
                 {/* Days Header */}
                 <div className="grid grid-cols-7 border-b border-[var(--border-01)] bg-white h-[40px]">
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                        <div key={day} className="flex items-center justify-center font-urbanist font-medium text-[14px] text-[var(--grey-800)] border-r border-[var(--border-01)] last:border-r-0">
+                        <div key={day} className="flex items-center justify-center font-inter font-medium text-[14px] text-[var(--grey-800)] border-r border-[var(--border-01)] last:border-r-0">
                             {day}
                         </div>
                     ))}
@@ -151,7 +151,7 @@ export default function CalendarView({
                             >
                                 {/* Day Number */}
                                 <div className={`
-                            mt-1 size-[24px] flex items-center justify-center rounded-full text-[14px] font-semibold font-urbanist mb-1
+                            mt-1 size-[24px] flex items-center justify-center rounded-full text-[14px] font-semibold font-inter mb-1
                             ${!d.currentMonth ? 'opacity-50 text-[#252525]' : 'text-[var(--grey-800)]'}
                             ${d.currentMonth &&
                                         d.day === new Date().getDate() &&

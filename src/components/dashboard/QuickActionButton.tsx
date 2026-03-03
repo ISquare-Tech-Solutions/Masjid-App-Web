@@ -13,16 +13,17 @@ export default function QuickActionButton({ label, onClick }: QuickActionButtonP
     <button
       onClick={onClick}
       className="
-        flex items-center justify-center gap-2
-        px-6 py-3 rounded-[12px]
-        border border-[var(--border-01)]
+        flex flex-1 items-center justify-between
+        p-[16px] rounded-[16px]
+        border border-[#e2e8f0]
         bg-white hover:bg-[var(--neutral-100)]
-        transition-colors
-        font-urbanist font-medium text-[14px] text-[var(--grey-800)]
+        transition-colors cursor-pointer
       "
     >
-      {label}
-      <ArrowUpRightIcon size={16} className="text-[var(--grey-800)]" />
+      <span className="font-inter font-medium text-[18px] text-[var(--grey-800)] leading-normal whitespace-nowrap">
+        {label}
+      </span>
+      <ArrowUpRightIcon size={24} className="text-[var(--grey-800)]" />
     </button>
   );
 }

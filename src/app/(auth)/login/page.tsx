@@ -83,10 +83,10 @@ export default function LoginPage() {
           <div className="p-6">
             {/* Greeting */}
             <div className="mb-8">
-              <p className="font-urbanist text-[16px] text-[var(--brand)] mb-1">
+              <p className="font-inter text-[16px] text-[var(--brand)] mb-1">
                 السَّلَامُ عَلَيْكُمْ
               </p>
-              <h1 className="font-urbanist font-semibold text-[36px] text-[var(--grey-800)]">
+              <h1 className="font-inter font-semibold text-[36px] text-[var(--grey-800)]">
                 Welcome Back 👋
               </h1>
             </div>
@@ -94,7 +94,7 @@ export default function LoginPage() {
             {/* General Error */}
             {errors.general && (
               <div className="mb-5 p-4 rounded-[12px] bg-red-50 border border-red-200">
-                <p className="font-urbanist text-[14px] text-[var(--error)]">
+                <p className="font-inter text-[14px] text-[var(--error)]">
                   {errors.general}
                 </p>
               </div>
@@ -140,7 +140,7 @@ export default function LoginPage() {
               {/* Forgot Password Link */}
               <button
                 type="button"
-                className="font-urbanist font-medium text-[20px] text-[var(--grey-800)] text-center hover:underline"
+                className="font-inter font-medium text-[20px] text-[var(--grey-800)] text-center hover:underline"
                 onClick={() => {
                   // TODO: Implement forgot password
                   console.log('Forgot password clicked');

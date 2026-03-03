@@ -17,28 +17,24 @@ export default function PrayerTimeCard({ prayer }: PrayerTimeCardProps) {
   };
 
   const mainParts = formatTimeParts(prayer.time);
-
-  // Athan formatting is a bit trickier if it's just a string "5:50 AM".
-  // Figma shows "Athan 5:50" in one style and "Am" in another.
-  // I'll try to parse it similarly.
   const athanParts = formatTimeParts(prayer.athanTime || '');
 
   return (
     <div
       className={`
-        flex flex-1 flex-col items-center justify-center gap-[8px]
+        flex flex-1 flex-col items-center justify-center gap-[6px]
         p-[24px] rounded-[12px] min-w-[160px]
-        transition-all duration-200 border
+        transition-all duration-200
         ${prayer.isActive
-          ? 'bg-[var(--brand)] border-[var(--brand)] text-white shadow-lg'
-          : 'bg-[var(--brand-05)] border-transparent hover:shadow-md'
+          ? 'bg-[var(--brand)] text-white'
+          : 'bg-white'
         }
       `}
     >
       {/* Prayer Name */}
       <p
         className={`
-          font-urbanist font-medium text-[22px] uppercase tracking-[-0.14px] leading-normal
+          font-inter font-medium text-[16px] uppercase leading-normal text-right
           ${prayer.isActive ? 'text-white' : 'text-[var(--brand)]'}
         `}
       >
@@ -46,10 +42,10 @@ export default function PrayerTimeCard({ prayer }: PrayerTimeCardProps) {
       </p>
 
       {/* Main Time */}
-      <div className="flex items-baseline gap-[6px] justify-center">
+      <div className="flex items-end gap-[2px] justify-center leading-normal">
         <p
           className={`
-            font-inter font-bold text-[26px] leading-normal
+            font-inter font-bold text-[26px] leading-normal text-center
             ${prayer.isActive ? 'text-white' : 'text-[var(--grey-800)]'}
           `}
         >
@@ -58,7 +54,7 @@ export default function PrayerTimeCard({ prayer }: PrayerTimeCardProps) {
         {mainParts.ampm && (
           <p
             className={`
-              font-inter font-bold text-[18px] uppercase leading-normal
+              font-inter font-bold text-[18px] uppercase leading-normal text-center
               ${prayer.isActive ? 'text-white' : 'text-[#666d80]'}
             `}
           >
@@ -67,28 +63,24 @@ export default function PrayerTimeCard({ prayer }: PrayerTimeCardProps) {
         )}
       </div>
 
-      {/* Athan Time */}
+      {/* Athan Time — Figma: "Adhan 5:50" at 14px + "Am" at ~9px superscript */}
       {prayer.athanTime && (
-        <div className="flex items-baseline gap-[4px] justify-center text-center">
-          <span
-            className={`
-              font-urbanist font-medium text-[20px] uppercase leading-normal
-              ${prayer.isActive ? 'text-white/80' : 'text-[var(--grey-100)]'}
-            `}
-          >
-            Athan {athanParts?.time || prayer.athanTime}
-          </span>
+        <p
+          className={`
+            font-inter font-medium text-[14px] leading-normal text-center uppercase
+            ${prayer.isActive ? 'text-white' : 'text-[#666d80]'}
+          `}
+        >
+          Adhan {athanParts?.time || prayer.athanTime}
           {athanParts?.ampm && (
             <span
-              className={`
-                font-urbanist font-medium text-[13px] uppercase leading-normal
-                ${prayer.isActive ? 'text-white' : 'text-[var(--grey-100)]'}
-              `}
+              className={`text-[9px] leading-none align-super ${prayer.isActive ? 'text-white' : 'text-[#666d80]'
+                }`}
             >
               {athanParts.ampm}
             </span>
           )}
-        </div>
+        </p>
       )}
     </div>
   );

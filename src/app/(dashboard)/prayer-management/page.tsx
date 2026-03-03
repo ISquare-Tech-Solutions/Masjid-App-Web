@@ -7,7 +7,8 @@ import Skeleton from '@/components/ui/Skeleton';
 import { ChevronRightIcon } from '@/components/ui/Icons';
 import DateHeader from '@/components/dashboard/DateHeader';
 import PrayerTimeCard from '@/components/dashboard/PrayerTimeCard';
-import type { PrayerTimeResponse, PrayersData } from '@/types/prayer-times';
+import JummahCard from '@/components/dashboard/JummahCard';
+import type { PrayerTimeResponse, PrayersData, JumuahTimeEntry } from '@/types/prayer-times';
 import type { PrayerTime } from '@/types';
 
 /* ── Constants ── */
@@ -219,7 +220,7 @@ export default function PrayerManagementPage() {
 
             {/* ─────────────── Page Header ─────────────── */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <h1 className="font-urbanist font-bold text-[28px] text-[#1f1f1f] leading-normal">
+                <h1 className="font-inter font-bold text-[28px] text-[#1f1f1f] leading-normal">
                     Prayer Management
                 </h1>
                 <button
@@ -239,7 +240,7 @@ export default function PrayerManagementPage() {
             </div>
 
             {/* ── Date Section ── */}
-            <div className="flex flex-col gap-6 items-center w-full">
+            <div className="flex flex-col gap-[16px] items-center bg-[rgba(7,119,52,0.05)] p-[24px] rounded-[16px] w-full">
                 <DateHeader
                     gregorianDate={selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
                     islamicDate={dailyPrayerTime?.hijriDate || ''}
@@ -250,17 +251,17 @@ export default function PrayerManagementPage() {
                 />
 
                 {/* ─── Prayer Time Cards ─── */}
-                <div className="flex justify-start md:justify-center gap-4 md:gap-[30px] items-stretch w-full overflow-x-auto scrollbar-hide pb-4 px-1">
+                <div className="flex gap-[30px] items-stretch w-full overflow-x-auto scrollbar-hide">
                     {loadingDaily ? (
                         /* SKELETON LOADING STATE */
                         Array.from({ length: 6 }).map((_, i) => (
-                            <div key={i} className="flex flex-1 flex-col items-center justify-center gap-4 p-6 rounded-[12px] bg-white border border-[var(--border-01)] h-[180px] min-w-[160px]">
-                                <Skeleton className="h-6 w-24" />
-                                <div className="flex items-baseline gap-2">
-                                    <Skeleton className="h-8 w-20" />
+                            <div key={i} className="flex flex-1 flex-col items-center justify-center gap-[6px] p-[24px] rounded-[12px] bg-white min-w-[160px] h-[127px]">
+                                <Skeleton className="h-5 w-16" />
+                                <div className="flex items-end gap-[2px]">
+                                    <Skeleton className="h-8 w-14" />
                                     <Skeleton className="h-5 w-8" />
                                 </div>
-                                <Skeleton className="h-4 w-32 mt-2" />
+                                <Skeleton className="h-4 w-24" />
                             </div>
                         ))
                     ) : (
@@ -270,6 +271,19 @@ export default function PrayerManagementPage() {
 
                             const jamah = formatTime12h(data?.jamah);
                             const athan = formatTime12h(data?.athan);
+
+                            // On Fridays, replace Zuhr with the JummahCard
+                            const isFriday = selectedDate.getDay() === 5;
+                            const hasJumuah = isFriday && dailyPrayerTime?.jumuahTimes && dailyPrayerTime.jumuahTimes.length > 0;
+                            if (prayer === 'zuhr' && hasJumuah) {
+                                return (
+                                    <JummahCard
+                                        key="jummah"
+                                        jumuahTimes={dailyPrayerTime.jumuahTimes as JumuahTimeEntry[]}
+                                        athanTime={data?.athan}
+                                    />
+                                );
+                            }
 
                             // Map to PrayerTime interface for the Card
                             const cardData = {
@@ -291,11 +305,11 @@ export default function PrayerManagementPage() {
                 {/* ── Month Header ── */}
                 <div className="flex items-center justify-between p-4">
                     <div className="flex flex-col gap-0.5">
-                        <p className="font-urbanist font-semibold text-[20px] text-[var(--grey-800)] leading-normal">
+                        <p className="font-inter font-semibold text-[20px] text-[var(--grey-800)] leading-normal">
                             {MONTHS[currentMonth]} {currentYear}
                         </p>
                         {hijriRange && (
-                            <p className="font-urbanist font-semibold text-[14px] text-[var(--brand)] leading-normal">
+                            <p className="font-inter font-semibold text-[14px] text-[var(--brand)] leading-normal">
                                 {hijriRange}
                             </p>
                         )}
@@ -364,12 +378,12 @@ export default function PrayerManagementPage() {
                     </div>
                 ) : error ? (
                     <div className="text-center py-20">
-                        <p className="font-urbanist text-[var(--error)] text-[16px]">{error}</p>
+                        <p className="font-inter text-[var(--error)] text-[16px]">{error}</p>
                         <button onClick={fetchMonthlyPrayerTimes} className="mt-4 px-6 py-2.5 bg-[var(--brand)] text-white rounded-[12px] font-inter font-medium text-[16px] cursor-pointer">Retry</button>
                     </div>
                 ) : monthlyPrayerTimes.length === 0 ? (
                     <div className="text-center py-20">
-                        <p className="font-urbanist text-[var(--neutral-500)] text-[16px]">
+                        <p className="font-inter text-[var(--neutral-500)] text-[16px]">
                             No prayer times found for {MONTHS[currentMonth]} {currentYear}
                         </p>
                         <button onClick={handleAddNew} className="mt-4 px-6 py-2.5 bg-[var(--brand)] text-white rounded-[12px] font-inter font-medium text-[16px] cursor-pointer">Add Prayer Times</button>
@@ -383,7 +397,7 @@ export default function PrayerManagementPage() {
                                 <tr className="border-t border-[var(--border-01)]">
                                     <th
                                         rowSpan={2}
-                                        className="bg-[var(--table-white)] text-left px-4 py-3 font-urbanist font-medium text-[14px] text-[#667085] uppercase w-[210px] border-r border-[var(--border-01)] align-middle"
+                                        className="bg-[var(--table-white)] text-left px-4 py-3 font-inter font-medium text-[14px] text-[#667085] uppercase w-[210px] border-r border-[var(--border-01)] align-middle"
                                     >
                                         Day (Date &amp; Hijiri)
                                     </th>
@@ -393,7 +407,7 @@ export default function PrayerManagementPage() {
                                             <th
                                                 key={prayer}
                                                 colSpan={isSunrise ? 1 : 2}
-                                                className={`bg-[var(--table-white)] text-center px-4 py-3 font-urbanist font-semibold text-[14px] text-[var(--grey-800)] uppercase border-r border-[var(--border-01)] last:border-r-0 ${isSunrise ? 'w-[105px]' : ''}`}
+                                                className={`bg-[var(--table-white)] text-center px-4 py-3 font-inter font-semibold text-[14px] text-[var(--grey-800)] uppercase border-r border-[var(--border-01)] last:border-r-0 ${isSunrise ? 'w-[105px]' : ''}`}
                                             >
                                                 {PRAYER_LABELS[prayer]}
                                             </th>
@@ -414,10 +428,10 @@ export default function PrayerManagementPage() {
                                         }
                                         return (
                                             <React.Fragment key={prayer}>
-                                                <th className="bg-[var(--table-white)] text-center px-4 py-2 font-urbanist font-medium text-[12px] text-[#667085] uppercase border-r border-[var(--border-01)]">
-                                                    Begins
+                                                <th className="bg-[var(--table-white)] text-center px-4 py-2 font-inter font-medium text-[12px] text-[#667085] uppercase border-r border-[var(--border-01)]">
+                                                    ADHAN
                                                 </th>
-                                                <th className="bg-[var(--table-white)] text-center px-4 py-2 font-urbanist font-semibold text-[12px] text-[var(--brand)] uppercase border-r border-[var(--border-01)] last:border-r-0">
+                                                <th className="bg-[var(--table-white)] text-center px-4 py-2 font-inter font-semibold text-[12px] text-[var(--brand)] uppercase border-r border-[var(--border-01)] last:border-r-0">
                                                     Jama&apos;ah
                                                 </th>
                                             </React.Fragment>
@@ -439,7 +453,7 @@ export default function PrayerManagementPage() {
                                         <tr
                                             key={pt.id}
                                             className={`border-t border-[var(--border-01)] transition-colors duration-200
-                                                ${isSelected ? 'bg-[var(--brand-05)]' : isToday ? 'bg-[var(--neutral-50)]' : 'bg-white hover:bg-[var(--neutral-50)]'}
+                                                ${isToday ? 'bg-[var(--brand-05)]' : isSelected ? 'bg-[var(--neutral-100)]' : 'bg-white hover:bg-[var(--neutral-50)]'}
                                             `}
                                             onClick={() => {
                                                 const d = new Date(pt.date + 'T00:00:00');
@@ -449,10 +463,10 @@ export default function PrayerManagementPage() {
                                         >
                                             {/* Day + Hijri column */}
                                             <td className="px-4 py-3 border-r border-[var(--border-01)] w-[210px]">
-                                                <p className="font-urbanist font-medium text-[14px] text-[var(--grey-800)] leading-normal">
+                                                <p className="font-inter font-medium text-[14px] text-[var(--grey-800)] leading-normal">
                                                     {monthShort} {dayNum}, {dayFull}
                                                 </p>
-                                                <p className="font-urbanist font-medium text-[12px] text-[#666d80] uppercase leading-normal">
+                                                <p className="font-inter font-medium text-[12px] text-[#666d80] uppercase leading-normal">
                                                     {pt.hijriDate || '—'}
                                                 </p>
                                             </td>
@@ -467,7 +481,7 @@ export default function PrayerManagementPage() {
                                                     return (
                                                         <td
                                                             key={prayer}
-                                                            className="text-center px-4 py-3 font-urbanist font-medium text-[14px] text-[#666d80] border-r border-[var(--border-01)]"
+                                                            className="text-center px-4 py-3 font-inter font-medium text-[14px] text-[#666d80] border-r border-[var(--border-01)]"
                                                         >
                                                             {formatTime12h(pData?.athan)}
                                                         </td>
@@ -479,17 +493,17 @@ export default function PrayerManagementPage() {
                                                     return (
                                                         <React.Fragment key={prayer}>
                                                             {/* Begins column: shows athan */}
-                                                            <td className="text-center px-4 py-3 font-urbanist font-medium text-[14px] text-[#666d80] border-r border-[var(--border-01)]">
+                                                            <td className="text-center px-4 py-3 font-inter font-medium text-[14px] text-[#666d80] border-r border-[var(--border-01)]">
                                                                 {formatTime12h(pData?.athan)}
                                                             </td>
                                                             {/* Jama'ah column: Jummah times stacked */}
                                                             <td className="px-4 py-1 border-r border-[var(--border-01)]">
                                                                 {pt.jumuahTimes.map((jt, idx) => (
                                                                     <div key={idx} className={`flex items-center justify-between ${idx > 0 ? 'border-t border-[var(--border-01)] pt-1 mt-1' : ''}`}>
-                                                                        <span className="font-urbanist font-medium text-[10px] text-[#666d80] uppercase">
+                                                                        <span className="font-inter font-medium text-[10px] text-[#666d80] uppercase">
                                                                             Jummah {idx + 1}
                                                                         </span>
-                                                                        <span className="font-urbanist font-semibold text-[12px] text-[var(--brand)]">
+                                                                        <span className="font-inter font-semibold text-[12px] text-[var(--brand)]">
                                                                             {formatTime12h(jt.jamah)}
                                                                         </span>
                                                                     </div>
@@ -502,10 +516,10 @@ export default function PrayerManagementPage() {
                                                 /* ── Normal prayer: BEGINS + JAMA'AH ── */
                                                 return (
                                                     <React.Fragment key={prayer}>
-                                                        <td className="text-center px-4 py-3 font-urbanist font-medium text-[14px] text-[#666d80] border-r border-[var(--border-01)]">
+                                                        <td className="text-center px-4 py-3 font-inter font-medium text-[14px] text-[#666d80] border-r border-[var(--border-01)]">
                                                             {formatTime12h(pData?.athan)}
                                                         </td>
-                                                        <td className="text-center px-4 py-3 font-urbanist font-semibold text-[14px] text-[var(--brand)] border-r border-[var(--border-01)] last:border-r-0">
+                                                        <td className="text-center px-4 py-3 font-inter font-semibold text-[14px] text-[var(--brand)] border-r border-[var(--border-01)] last:border-r-0">
                                                             {formatTime12h(pData?.jamah)}
                                                         </td>
                                                     </React.Fragment>

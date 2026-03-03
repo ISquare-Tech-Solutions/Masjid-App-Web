@@ -80,7 +80,7 @@ body {
 body {
   background: var(--background);
   color: var(--grey-800);
-  font-family: 'Urbanist', sans-serif;
+  font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -92,7 +92,7 @@ body {
 
 /* Utility classes for fonts */
 .font-urbanist {
-  font-family: 'Urbanist', sans-serif;
+  font-family: 'Inter', sans-serif;
 }
 
 .font-dm-sans {

@@ -3,13 +3,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import DateHeader from '@/components/dashboard/DateHeader';
 import PrayerTimeCard from '@/components/dashboard/PrayerTimeCard';
+import JummahCard from '@/components/dashboard/JummahCard';
 import QuickActionButton from '@/components/dashboard/QuickActionButton';
 import EventCard from '@/components/dashboard/EventCard';
 import CampaignCard from '@/components/dashboard/CampaignCard';
 import Skeleton from '@/components/ui/Skeleton';
 import type { PrayerTime, Event, Campaign } from '@/types';
 import { getPrayerTimes } from '@/lib/api/prayer-times';
-import type { PrayerTimeResponse, PrayersData } from '@/types/prayer-times';
+import type { PrayerTimeResponse, PrayersData, JumuahTimeEntry } from '@/types/prayer-times';
 
 // Helper to format date key YYYY-MM-DD
 const formatDateKey = (date: Date) => {
@@ -204,9 +205,9 @@ export default function DashboardPage() {
   });
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-[24px]">
       {/* ── Date Section ── */}
-      <div className="flex flex-col gap-6 items-center w-full">
+      <div className="flex flex-col gap-[16px] items-center bg-[rgba(7,119,52,0.05)] p-[24px] rounded-[16px] w-full">
         <DateHeader
           gregorianDate={selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
           islamicDate={daysPrayerData?.hijriDate || '—'}
@@ -217,31 +218,43 @@ export default function DashboardPage() {
         />
 
         {/* ─── Prayer Time Cards ─── */}
-        <div className="flex justify-start md:justify-center gap-4 md:gap-[30px] items-stretch w-full overflow-x-auto scrollbar-hide pb-4 px-1">
+        <div className="flex gap-[30px] items-stretch w-full overflow-x-auto scrollbar-hide">
           {loading ? (
             /* SKELETON LOADING STATE */
             Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="flex flex-1 flex-col items-center justify-center gap-4 p-6 rounded-[12px] bg-white border border-[var(--border-01)] h-[180px] min-w-[160px]">
-                <Skeleton className="h-6 w-24" />
-                <div className="flex items-baseline gap-2">
-                  <Skeleton className="h-8 w-20" />
+              <div key={i} className="flex flex-1 flex-col items-center justify-center gap-[6px] p-[24px] rounded-[12px] bg-white min-w-[160px] h-[127px]">
+                <Skeleton className="h-5 w-16" />
+                <div className="flex items-end gap-[2px]">
+                  <Skeleton className="h-8 w-14" />
                   <Skeleton className="h-5 w-8" />
                 </div>
-                <Skeleton className="h-4 w-32 mt-2" />
+                <Skeleton className="h-4 w-24" />
               </div>
             ))
           ) : daysPrayerData ? (
-            displayPrayerTimes.map((prayer) => (
-              <PrayerTimeCard key={prayer.name} prayer={prayer} />
-            ))
+            displayPrayerTimes.map((prayer) => {
+              // On Fridays, replace Zuhr with the JummahCard
+              const isFriday = selectedDate.getDay() === 5;
+              const hasJumuah = isFriday && daysPrayerData.jumuahTimes && daysPrayerData.jumuahTimes.length > 0;
+              if (prayer.name === 'Zuhr' && hasJumuah) {
+                return (
+                  <JummahCard
+                    key="jummah"
+                    jumuahTimes={daysPrayerData.jumuahTimes as JumuahTimeEntry[]}
+                    athanTime={daysPrayerData.prayers.zuhr?.athan}
+                  />
+                );
+              }
+              return <PrayerTimeCard key={prayer.name} prayer={prayer} />;
+            })
           ) : (
-            <p className="text-gray-500 py-10">No prayer times found for this date.</p>
+            <p className="text-gray-500 py-10 w-full text-center">No prayer times found for this date.</p>
           )}
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="flex gap-[18px]">
         <QuickActionButton label="Add Event" onClick={() => console.log('Add Event')} />
         <QuickActionButton
           label="Add Announcement"
@@ -256,10 +269,10 @@ export default function DashboardPage() {
 
       {/* Upcoming Events Section */}
       <section>
-        <h2 className="font-urbanist font-semibold text-[20px] text-[var(--grey-800)] mb-4">
+        <h2 className="font-inter font-semibold text-[20px] text-[var(--grey-800)] mb-[16px]">
           Upcoming Events
         </h2>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-[24px]">
           {upcomingEvents.map((event) => (
             <EventCard key={event.id} event={event} />
           ))}
@@ -268,10 +281,10 @@ export default function DashboardPage() {
 
       {/* Active Campaigns Section */}
       <section>
-        <h2 className="font-urbanist font-semibold text-[20px] text-[var(--grey-800)] mb-4">
+        <h2 className="font-inter font-semibold text-[20px] text-[var(--grey-800)] mb-[16px]">
           Active Campaigns
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[24px]">
           {activeCampaigns.map((campaign) => (
             <CampaignCard key={campaign.id} campaign={campaign} />
           ))}

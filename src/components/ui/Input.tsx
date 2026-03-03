@@ -18,7 +18,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="flex flex-col gap-2 w-full">
         {label && (
-          <label className="font-urbanist text-[14px] text-[var(--grey-800)] tracking-[0.14px]">
+          <label className="font-inter text-[14px] text-[var(--grey-800)] tracking-[0.14px]">
             {label}
           </label>
         )}
@@ -29,7 +29,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             className={`
               w-full h-[48px] px-[21px] py-[16px] 
               border rounded-[12px] 
-              font-urbanist text-[16px]
+              font-inter text-[16px]
               placeholder:text-[var(--neutral-500)]
               text-[var(--grey-800)]
               focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent
@@ -80,7 +80,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             </div>
           )}
         </div>
-        {error && <span className="text-[var(--error)] text-[12px] font-urbanist">{error}</span>}
+        {error && <span className="text-[var(--error)] text-[12px] font-inter">{error}</span>}
       </div>
     );
   }

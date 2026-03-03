@@ -9,44 +9,52 @@ interface EventCardProps {
 
 export default function EventCard({ event }: EventCardProps) {
   return (
-    <div className="bg-white border border-[var(--border-01)] rounded-[12px] p-5 hover:shadow-[0_4px_21px_rgba(0,0,0,0.1)] transition-shadow">
-      {/* Header */}
-      <div className="flex justify-between items-start mb-3">
-        <div>
-          <h3 className="font-urbanist font-semibold text-[16px] text-[var(--grey-800)]">
-            {event.title}
-          </h3>
-          <span className="font-urbanist text-[14px] text-[var(--brand)]">{event.category}</span>
-        </div>
-        <button className="p-2 hover:bg-[var(--neutral-100)] rounded-full transition-colors">
-          <ArrowUpRightIcon size={16} className="text-[var(--grey-800)]" />
-        </button>
+    <div className="bg-white border border-[#e2e8f0] rounded-[24px] p-[24px] flex flex-col gap-[24px] overflow-hidden hover:shadow-[0_4px_21px_rgba(0,0,0,0.1)] transition-shadow">
+      {/* Event Info */}
+      <div className="flex flex-col gap-[8px]">
+        <h3 className="font-inter font-bold text-[20px] text-[var(--grey-800)] leading-normal">
+          {event.title}
+        </h3>
+        <span className="font-inter font-medium text-[16px] text-[#666d80] leading-normal">
+          {event.category}
+        </span>
+        <p className="font-inter font-medium text-[16px] text-[#666d80] leading-normal">
+          {event.description}
+        </p>
       </div>
 
-      {/* Description */}
-      <p className="font-urbanist text-[14px] text-[var(--grey-100)] mb-4 line-clamp-2">
-        {event.description}
-      </p>
+      {/* Event Details */}
+      <div className="flex items-end justify-between">
+        <div className="flex flex-col justify-between gap-[12px]">
+          {/* Speaker Info */}
+          {event.speaker && (
+            <div className="flex items-center gap-[14px]">
+              <span className="font-inter font-medium text-[16px] text-[#666d80] leading-normal">Speaker</span>
+              <span className="font-inter font-medium text-[16px] text-[var(--grey-800)] leading-normal">{event.speaker}</span>
+            </div>
+          )}
 
-      {/* Speaker */}
-      {event.speaker && (
-        <p className="font-urbanist text-[14px] text-[var(--grey-800)] mb-4">
-          <span className="text-[var(--neutral-500)]">Speaker</span> {event.speaker}
-        </p>
-      )}
+          {/* Date & Time */}
+          <div className="flex items-center gap-[24px]">
+            <div className="flex items-center gap-[8px]">
+              <CalendarIcon size={24} className="text-[var(--brand)]" />
+              <span className="font-inter font-semibold text-[16px] text-[var(--grey-800)] leading-normal">
+                {event.date}
+              </span>
+            </div>
+            <div className="flex items-center gap-[8px]">
+              <ClockIcon size={24} className="text-[var(--brand)]" />
+              <span className="font-inter font-semibold text-[16px] text-[var(--grey-800)] leading-normal">
+                {event.startTime} - {event.endTime}
+              </span>
+            </div>
+          </div>
+        </div>
 
-      {/* Footer - Date & Time */}
-      <div className="flex items-center gap-4 text-[var(--brand)]">
-        <div className="flex items-center gap-1">
-          <CalendarIcon size={16} />
-          <span className="font-urbanist text-[14px]">{event.date}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <ClockIcon size={16} />
-          <span className="font-urbanist text-[14px]">
-            {event.startTime} - {event.endTime}
-          </span>
-        </div>
+        {/* Action Button */}
+        <button className="flex items-center justify-center w-[60px] h-[60px] rounded-full bg-white border border-[#e2e8f0] shrink-0 hover:bg-[var(--neutral-100)] transition-colors">
+          <ArrowUpRightIcon size={26} className="text-[var(--grey-800)]" />
+        </button>
       </div>
     </div>
   );

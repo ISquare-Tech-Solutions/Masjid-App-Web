@@ -91,7 +91,7 @@ export default function DateRangePicker({ fromDate, toDate, onApply, onCancel }:
             <div className="relative bg-white rounded-[20px] w-full max-w-[430px] shadow-2xl overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 pt-6 pb-3">
-                    <h3 className="font-urbanist font-bold text-[20px] text-[var(--grey-800)]">
+                    <h3 className="font-inter font-bold text-[20px] text-[var(--grey-800)]">
                         Date Range
                     </h3>
                     <button onClick={onCancel} className="p-1 hover:bg-[var(--neutral-100)] rounded-full transition-colors cursor-pointer">
@@ -106,14 +106,14 @@ export default function DateRangePicker({ fromDate, toDate, onApply, onCancel }:
                     <div className="flex bg-[var(--brand-05)] rounded-full p-0.5 mb-5">
                         <button
                             onClick={() => setActiveTab('from')}
-                            className={`flex-1 py-2 rounded-full font-urbanist font-semibold text-[14px] transition-all cursor-pointer
+                            className={`flex-1 py-2 rounded-full font-inter font-semibold text-[14px] transition-all cursor-pointer
                                 ${activeTab === 'from' ? 'bg-[var(--brand)] text-white shadow-sm' : 'text-[var(--grey-800)]'}`}
                         >
                             From
                         </button>
                         <button
                             onClick={() => setActiveTab('to')}
-                            className={`flex-1 py-2 rounded-full font-urbanist font-semibold text-[14px] transition-all cursor-pointer
+                            className={`flex-1 py-2 rounded-full font-inter font-semibold text-[14px] transition-all cursor-pointer
                                 ${activeTab === 'to' ? 'bg-[var(--brand)] text-white shadow-sm' : 'text-[var(--grey-800)]'}`}
                         >
                             To
@@ -125,14 +125,14 @@ export default function DateRangePicker({ fromDate, toDate, onApply, onCancel }:
                         <select
                             value={viewYear}
                             onChange={(e) => setViewYear(Number(e.target.value))}
-                            className="font-urbanist font-medium text-[14px] text-[var(--grey-800)] bg-transparent border-none outline-none cursor-pointer appearance-auto"
+                            className="font-inter font-medium text-[14px] text-[var(--grey-800)] bg-transparent border-none outline-none cursor-pointer appearance-auto"
                         >
                             {years.map(y => <option key={y} value={y}>{y}</option>)}
                         </select>
                         <select
                             value={viewMonth}
                             onChange={(e) => setViewMonth(Number(e.target.value))}
-                            className="font-urbanist font-medium text-[14px] text-[var(--grey-800)] bg-transparent border-none outline-none cursor-pointer appearance-auto"
+                            className="font-inter font-medium text-[14px] text-[var(--grey-800)] bg-transparent border-none outline-none cursor-pointer appearance-auto"
                         >
                             {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
                         </select>
@@ -141,7 +141,7 @@ export default function DateRangePicker({ fromDate, toDate, onApply, onCancel }:
                     {/* Day Headers */}
                     <div className="grid grid-cols-7 mb-2">
                         {DAY_HEADERS.map((d, i) => (
-                            <div key={i} className="text-center font-urbanist font-medium text-[13px] text-[var(--neutral-500)] py-1">
+                            <div key={i} className="text-center font-inter font-medium text-[13px] text-[var(--neutral-500)] py-1">
                                 {d}
                             </div>
                         ))}
@@ -170,7 +170,7 @@ export default function DateRangePicker({ fromDate, toDate, onApply, onCancel }:
                                     <button
                                         onClick={() => handleDayClick(day)}
                                         className={`w-[36px] h-[36px] rounded-full flex items-center justify-center
-                                            font-urbanist font-medium text-[14px] transition-all cursor-pointer
+                                            font-inter font-medium text-[14px] transition-all cursor-pointer
                                             ${isSelected
                                                 ? 'bg-[var(--brand)] text-white'
                                                 : isInRange
@@ -191,14 +191,14 @@ export default function DateRangePicker({ fromDate, toDate, onApply, onCancel }:
                     <button
                         onClick={onCancel}
                         className="flex-1 py-3 border border-[var(--border-01)] text-[var(--grey-800)] rounded-full
-                            font-urbanist font-semibold text-[14px] hover:bg-[var(--neutral-100)] transition-colors cursor-pointer"
+                            font-inter font-semibold text-[14px] hover:bg-[var(--neutral-100)] transition-colors cursor-pointer"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleApply}
                         className="flex-1 py-3 bg-[var(--brand)] text-white rounded-full
-                            font-urbanist font-semibold text-[14px] hover:opacity-90 transition-opacity cursor-pointer"
+                            font-inter font-semibold text-[14px] hover:opacity-90 transition-opacity cursor-pointer"
                     >
                         Apply
                     </button>
