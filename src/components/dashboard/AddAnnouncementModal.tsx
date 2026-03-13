@@ -4,46 +4,138 @@ import { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import { CloseIcon } from '@/components/ui/Icons';
 import TimePicker from '@/components/ui/TimePicker';
+import type { Announcement } from '@/types';
+import { createAnnouncement, updateAnnouncement, type CreateAnnouncementData } from '@/lib/api/announcements';
 
 interface AddAnnouncementModalProps {
     isOpen: boolean;
     onClose: () => void;
+    announcement?: Announcement | null; // For editing if needed in the future
 }
 
-export default function AddAnnouncementModal({ isOpen, onClose }: AddAnnouncementModalProps) {
+/* ── Helper: parse "10:30 AM" → "10:30" (24h) ── */
+function parseTime12to24(t: string): string {
+    if (!t) return '';
+    const match = t.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (!match) return '';
+    let h = parseInt(match[1], 10);
+    const m = match[2];
+    const p = match[3].toUpperCase();
+    if (p === 'PM' && h < 12) h += 12;
+    if (p === 'AM' && h === 12) h = 0;
+    return `${h.toString().padStart(2, '0')}:${m}`;
+}
+
+export default function AddAnnouncementModal({ isOpen, onClose, announcement }: AddAnnouncementModalProps) {
+    const isEditMode = !!announcement;
+
     const [title, setTitle] = useState('');
     const [message, setMessage] = useState('');
     const [scheduleMode, setScheduleMode] = useState(false);
-    const [scheduleDate, setScheduleDate] = useState('');
-    const [scheduleTime, setScheduleTime] = useState('');
+    const [scheduleDate, setScheduleDate] = useState(''); // YYYY-MM-DD
+    const [scheduleTime, setScheduleTime] = useState(''); // HH:MM
 
-    // Reset form when modal opens
+    const [isSaving, setIsSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    // Reset or Populate form when modal opens
     useEffect(() => {
         if (isOpen) {
-            setTitle('');
-            setMessage('');
-            setScheduleMode(false);
-            setScheduleDate('');
-            setScheduleTime('');
+            setError(null);
+            if (announcement) {
+                setTitle(announcement.title || '');
+                setMessage(announcement.message || announcement.description || '');
+                if (announcement.scheduledAt || announcement.status === 'scheduled') {
+                    setScheduleMode(true);
+                    try {
+                        const d = new Date(announcement.scheduledAt || announcement.date || Date.now());
+                        if (!isNaN(d.getTime())) {
+                            setScheduleDate(d.toISOString().split('T')[0]);
+                        } else {
+                            setScheduleDate('');
+                        }
+                    } catch {
+                        setScheduleDate('');
+                    }
+                    setScheduleTime(parseTime12to24(announcement.time || ''));
+                } else {
+                    setScheduleMode(false);
+                    setScheduleDate('');
+                    setScheduleTime('');
+                }
+            } else {
+                setTitle('');
+                setMessage('');
+                setScheduleMode(false);
+                setScheduleDate('');
+                setScheduleTime('');
+            }
         }
-    }, [isOpen]);
+    }, [isOpen, announcement]);
+
+    const submitAnnouncement = async (status: 'sent' | 'scheduled') => {
+        if (!title || !message) {
+            setError("Title and Message are required.");
+            return;
+        }
+
+        let isoDateTime: string | undefined = undefined;
+
+        if (status === 'scheduled') {
+            if (!scheduleDate) {
+                setError("Schedule Date is required when scheduling.");
+                return;
+            }
+            const timePart = scheduleTime ? `${scheduleTime}:00` : '00:00:00';
+            isoDateTime = `${scheduleDate}T${timePart}Z`;
+        } else {
+            // If sending now, we can omit scheduledAt or set it to current UTC
+            isoDateTime = new Date().toISOString(); 
+        }
+
+        setIsSaving(true);
+        setError(null);
+
+        try {
+            const data: CreateAnnouncementData = {
+                title,
+                message,
+                status,
+            };
+            
+            if (isoDateTime) {
+                data.scheduledAt = isoDateTime;
+            }
+
+            if (isEditMode && announcement?.id) {
+                await updateAnnouncement(announcement.id, data);
+            } else {
+                await createAnnouncement(data);
+            }
+            onClose();
+        } catch (err: any) {
+            setError(err?.message || "An error occurred while saving the announcement.");
+            console.error('Failed to save announcement:', err);
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const handleSend = () => {
-        console.log('Sending announcement:', { title, message });
-        onClose();
+        submitAnnouncement('sent');
+    };
+
+    const handleSave = () => {
+        submitAnnouncement('scheduled');
     };
 
     const handleScheduleClick = () => {
         setScheduleMode(true);
     };
 
-    const handleSave = () => {
-        console.log('Scheduling announcement:', { title, message, scheduleDate, scheduleTime });
-        onClose();
-    };
-
     const handleCancel = () => {
-        if (scheduleMode) {
+        if (scheduleMode && !isEditMode) {
+            // If we just clicked 'Schedule' from a new blank form, go back to immediate send view
             setScheduleMode(false);
         } else {
             onClose();
@@ -56,15 +148,22 @@ export default function AddAnnouncementModal({ isOpen, onClose }: AddAnnouncemen
                 {/* Header */}
                 <div className="flex justify-between items-start">
                     <h2 className="font-urbanist font-bold text-[24px] text-[var(--grey-800)] leading-normal">
-                        {scheduleMode ? 'Schedule for later' : 'Add New Announcements'}
+                        {isEditMode ? 'Update Announcement' : (scheduleMode ? 'Schedule for later' : 'Add New Announcements')}
                     </h2>
                     <button
                         onClick={onClose}
                         className="w-[36px] h-[36px] flex items-center justify-center bg-[rgba(7,119,52,0.1)] rounded-[8px] hover:bg-[rgba(7,119,52,0.2)] transition-colors shrink-0"
+                        disabled={isSaving}
                     >
                         <CloseIcon size={24} className="text-[var(--grey-800)]" />
                     </button>
                 </div>
+                
+                {error && (
+                    <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+                        {error}
+                    </div>
+                )}
 
                 {/* Title Field */}
                 <div className="flex flex-col gap-[8px]">

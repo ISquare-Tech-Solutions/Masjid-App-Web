@@ -1,12 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
-    CalendarIcon,
     PlusIcon,
     GridViewIcon,
     CalendarViewIcon,
-    FilterIcon,
     EditIcon,
     EyeIcon,
     ChevronDownIcon,
@@ -14,148 +12,167 @@ import {
     ChevronRightIcon,
 } from '@/components/ui/Icons';
 import type { Event as EventType, Announcement } from '@/types';
-import AnnouncementItem from '@/components/dashboard/AnnouncementItem';
 import CalendarView from '@/components/dashboard/CalendarView';
 import AddEventModal from '@/components/dashboard/AddEventModal';
 import AddAnnouncementModal from '@/components/dashboard/AddAnnouncementModal';
 import EventDetailsModal from '@/components/dashboard/EventDetailsModal';
+import { getEvents, deleteEvent } from '@/lib/api/events';
+import { getAnnouncements, deleteAnnouncement } from '@/lib/api/announcements';
 
-// Mock Data — October 2025 calendar events matching Figma design
-const mockEvents: EventType[] = [
-    // Sep 30 (prev month, Mon)
-    { id: '1', title: 'Sisters Halaqah', category: 'Religious', description: 'Weekly sisters study circle.', date: '30 Sep 2025', startTime: '10:30 AM', endTime: '12:00 PM', status: 'past', speaker: 'Ustadha Fatima', location: 'Sisters Hall' },
-    // Oct 3 (Thu)
-    { id: '2', title: 'Sisters Halaqah', category: 'Religious', description: 'Weekly sisters study circle.', date: '3 Oct 2025', startTime: '10:30 AM', endTime: '12:00 PM', status: 'sent', speaker: 'Ustadha Fatima', location: 'Sisters Hall' },
-    // Oct 5 (Sat)
-    { id: '3', title: 'Quran Study Circle', category: 'Religious', description: 'Weekend Quran study session.', date: '5 Oct 2025', startTime: '10:30 AM', endTime: '12:00 PM', status: 'sent', speaker: 'Sheikh Omar', location: 'Main Hall' },
-    // Oct 7 (Mon)
-    { id: '4', title: 'Sisters Halaqah', category: 'Religious', description: 'Weekly sisters study circle.', date: '7 Oct 2025', startTime: '10:30 AM', endTime: '12:00 PM', status: 'sent', speaker: 'Ustadha Fatima', location: 'Sisters Hall' },
-    // Oct 8 (Tue) — 2 events
-    { id: '5', title: 'Youth Mentoring', category: 'Community', description: 'Weekly youth mentoring session.', date: '8 Oct 2025', startTime: '10:30 AM', endTime: '12:00 PM', status: 'sent', speaker: 'Brother Yusuf', location: 'Youth Center' },
-    { id: '6', title: 'Community Gathering', category: 'Community', description: 'Evening community gathering.', date: '8 Oct 2025', startTime: '10:30 AM', endTime: '09:00 PM', status: 'sent', location: 'Main Hall' },
-    // Oct 12 (Sat)
-    { id: '7', title: 'Quran Study Circle', category: 'Religious', description: 'Weekend Quran study session.', date: '12 Oct 2025', startTime: '10:30 AM', endTime: '12:00 PM', status: 'sent', speaker: 'Sheikh Omar', location: 'Main Hall' },
-    // Oct 13 (Sun) — 3 events
-    { id: '8', title: 'Sisters Halaqah', category: 'Religious', description: 'Weekly sisters study circle.', date: '13 Oct 2025', startTime: '10:30 AM', endTime: '12:00 PM', status: 'sent', speaker: 'Ustadha Fatima', location: 'Sisters Hall' },
-    { id: '9', title: 'Community Potluck', category: 'Community', description: 'Community potluck event.', date: '13 Oct 2025', startTime: '10:30 AM', endTime: '03:00 PM', status: 'sent', location: 'Community Center' },
-    { id: '10', title: 'Tafsir Session', category: 'Religious', description: 'Evening tafsir session.', date: '13 Oct 2025', startTime: '10:30 AM', endTime: '09:30 PM', status: 'sent', speaker: 'Sheikh Ahmed', location: 'Main Hall' },
-    // Oct 14 (Mon)
-    { id: '11', title: 'Sisters Halaqah', category: 'Religious', description: 'Weekly sisters study circle.', date: '14 Oct 2025', startTime: '10:30 AM', endTime: '12:00 PM', status: 'sent', speaker: 'Ustadha Fatima', location: 'Sisters Hall' },
-    // Oct 15 (Tue — "today" in Figma) — 2 events
-    { id: '12', title: 'Friday Prayer Khutbah', category: 'Religious', description: 'Midweek special lecture.', date: '15 Oct 2025', startTime: '10:30 AM', endTime: '12:00 PM', status: 'sent', speaker: 'Sheikh Ahmed', location: 'Main Hall' },
-    { id: '13', title: 'Youth Mentoring', category: 'Community', description: 'Youth mentoring session.', date: '15 Oct 2025', startTime: '10:30 AM', endTime: '06:00 PM', status: 'sent', location: 'Youth Center' },
-    // Oct 17 (Thu) — 2 events
-    { id: '14', title: 'Friday Community Gathering', category: 'Community', description: 'Please note that the masjid will undergo light maintenance during this time.', date: '17 Oct 2025', startTime: '10:30 AM', endTime: '', status: 'sent', speaker: 'Ustadh Sultan Ahmed', location: 'Masjid Abu Bakar' },
-    { id: '15', title: 'Evening Prayer Gathering', category: 'Religious', description: 'Evening prayer gathering.', date: '17 Oct 2025', startTime: '10:30 AM', endTime: '09:00 PM', status: 'sent', location: 'Main Hall' },
-    // Oct 18 (Fri)
-    { id: '16', title: 'Friday Prayer Khutbah', category: 'Religious', description: 'Special Friday lecture.', date: '18 Oct 2025', startTime: '10:30 AM', endTime: '02:30 PM', status: 'sent', speaker: 'Sheikh Ahmed', location: 'Main Hall' },
-    // Oct 20 (Sun)
-    { id: '17', title: 'Ramadan Prep Talk', category: 'Religious', description: 'Preparing for the blessed month.', date: '20 Oct 2025', startTime: '10:30 AM', endTime: '', status: 'sent', speaker: 'Sheikh Ahmed', location: 'Main Hall' },
-    // Oct 22 (Tue) — 2 events
-    { id: '18', title: 'Sisters Halaqah', category: 'Religious', description: 'Weekly halaqah session.', date: '22 Oct 2025', startTime: '10:30 AM', endTime: '12:00 PM', status: 'sent', speaker: 'Ustadha Fatima', location: 'Sisters Hall' },
-    { id: '19', title: 'Community Meeting', category: 'Community', description: 'Community meeting.', date: '22 Oct 2025', startTime: '10:30 AM', endTime: '09:00 PM', status: 'sent', location: 'Main Hall' },
-    // Oct 25 (Fri)
-    { id: '20', title: 'Friday Prayer Khutbah', category: 'Religious', description: 'Friday prayer and lecture.', date: '25 Oct 2025', startTime: '10:30 AM', endTime: '02:30 PM', status: 'sent', speaker: 'Sheikh Ahmed', location: 'Main Hall' },
-    // Oct 26 (Sat) — 4 events (view more)
-    { id: '21', title: 'Sisters Halaqah', category: 'Religious', description: 'Weekend study circle.', date: '26 Oct 2025', startTime: '10:30 AM', endTime: '12:00 PM', status: 'sent', speaker: 'Ustadha Fatima', location: 'Sisters Hall' },
-    { id: '22', title: 'Youth Sports Day', category: 'Community', description: 'Community sports event.', date: '26 Oct 2025', startTime: '10:30 AM', endTime: '05:00 PM', status: 'sent', location: 'Sports Complex' },
-    { id: '23', title: 'Tafsir Session', category: 'Religious', description: 'Evening tafsir.', date: '26 Oct 2025', startTime: '10:30 AM', endTime: '09:00 PM', status: 'sent', speaker: 'Sheikh Ahmed', location: 'Main Hall' },
-    { id: '24', title: 'Community Dinner', category: 'Community', description: 'Evening dinner event.', date: '26 Oct 2025', startTime: '10:30 AM', endTime: '11:00 PM', status: 'sent', location: 'Main Hall' },
-    // Oct 28 (Mon)
-    { id: '25', title: 'Sisters Halaqah', category: 'Religious', description: 'Weekly sisters study circle.', date: '28 Oct 2025', startTime: '10:30 AM', endTime: '12:00 PM', status: 'sent', speaker: 'Ustadha Fatima', location: 'Sisters Hall' },
-    // Oct 29 (Tue) — 2 events
-    { id: '26', title: 'Quran Study Circle', category: 'Religious', description: 'Weekly Quran study.', date: '29 Oct 2025', startTime: '10:30 AM', endTime: '12:00 PM', status: 'sent', speaker: 'Sheikh Omar', location: 'Main Hall' },
-    { id: '27', title: 'Community Cleanup', category: 'Community', description: 'Community cleanup drive.', date: '29 Oct 2025', startTime: '10:30 AM', endTime: '05:00 PM', status: 'sent', location: 'Masjid Grounds' },
-    // Oct 31 (Thu)
-    { id: '28', title: 'Monthly Review', category: 'Religious', description: 'Month-end review session.', date: '31 Oct 2025', startTime: '10:30 AM', endTime: '12:00 PM', status: 'sent', speaker: 'Ustadha Fatima', location: 'Sisters Hall' },
-    // ——— March 2026 (current month) ———
-    // Mar 1 (Sun)
-    { id: '29', title: 'Sisters Halaqah', category: 'Religious', description: 'Weekly sisters study circle.', date: '1 Mar 2026', startTime: '10:30 AM', endTime: '12:00 PM', status: 'sent', speaker: 'Ustadha Fatima', location: 'Sisters Hall' },
-    // Mar 3 (Tue)
-    { id: '30', title: 'Quran Study Circle', category: 'Religious', description: 'Weekly Quran study session.', date: '3 Mar 2026', startTime: '10:30 AM', endTime: '12:00 PM', status: 'sent', speaker: 'Sheikh Omar', location: 'Main Hall' },
-    // Mar 5 (Thu)
-    { id: '31', title: 'Youth Mentoring', category: 'Community', description: 'Weekly youth mentoring session.', date: '5 Mar 2026', startTime: '10:30 AM', endTime: '12:00 PM', status: 'sent', speaker: 'Brother Yusuf', location: 'Youth Center' },
-    { id: '32', title: 'Community Gathering', category: 'Community', description: 'Evening community gathering.', date: '5 Mar 2026', startTime: '07:00 PM', endTime: '09:00 PM', status: 'sent', location: 'Main Hall' },
-    // Mar 6 (Fri)
-    { id: '33', title: 'Friday Prayer Khutbah', category: 'Religious', description: 'Weekly Friday sermon.', date: '6 Mar 2026', startTime: '01:00 PM', endTime: '02:00 PM', status: 'sent', speaker: 'Sheikh Ahmed', location: 'Main Hall' },
-    // Mar 8 (Sun)
-    { id: '34', title: 'Sisters Halaqah', category: 'Religious', description: 'Weekly sisters study circle.', date: '8 Mar 2026', startTime: '10:30 AM', endTime: '12:00 PM', status: 'sent', speaker: 'Ustadha Fatima', location: 'Sisters Hall' },
-    // Mar 10 (Tue)
-    { id: '35', title: 'Quran Study Circle', category: 'Religious', description: 'Weekly Quran study session.', date: '10 Mar 2026', startTime: '10:30 AM', endTime: '12:00 PM', status: 'sent', speaker: 'Sheikh Omar', location: 'Main Hall' },
-    // Mar 12 (Thu — today)
-    { id: '36', title: 'Sisters Halaqah', category: 'Religious', description: 'Weekly sisters study circle.', date: '12 Mar 2026', startTime: '10:30 AM', endTime: '12:00 PM', status: 'sent', speaker: 'Ustadha Fatima', location: 'Sisters Hall' },
-    { id: '37', title: 'Tafsir Session', category: 'Religious', description: 'Evening tafsir class.', date: '12 Mar 2026', startTime: '07:30 PM', endTime: '09:00 PM', status: 'sent', speaker: 'Sheikh Ahmed', location: 'Main Hall' },
-    // Mar 13 (Fri)
-    { id: '38', title: 'Friday Prayer Khutbah', category: 'Religious', description: 'Weekly Friday sermon.', date: '13 Mar 2026', startTime: '01:00 PM', endTime: '02:00 PM', status: 'sent', speaker: 'Sheikh Ahmed', location: 'Main Hall' },
-    // Mar 15 (Sun)
-    { id: '39', title: 'Sisters Halaqah', category: 'Religious', description: 'Weekly sisters study circle.', date: '15 Mar 2026', startTime: '10:30 AM', endTime: '12:00 PM', status: 'sent', speaker: 'Ustadha Fatima', location: 'Sisters Hall' },
-    { id: '40', title: 'Community Potluck', category: 'Community', description: 'Monthly community potluck.', date: '15 Mar 2026', startTime: '12:30 PM', endTime: '03:00 PM', status: 'sent', location: 'Community Center' },
-    // Mar 17 (Tue)
-    { id: '41', title: 'Quran Study Circle', category: 'Religious', description: 'Weekly Quran study session.', date: '17 Mar 2026', startTime: '10:30 AM', endTime: '12:00 PM', status: 'sent', speaker: 'Sheikh Omar', location: 'Main Hall' },
-    // Mar 19 (Thu)
-    { id: '42', title: 'Youth Sports Day', category: 'Community', description: 'Sports tournament for youth.', date: '19 Mar 2026', startTime: '10:00 AM', endTime: '04:00 PM', status: 'sent', location: 'Sports Complex' },
-    // Mar 20 (Fri)
-    { id: '43', title: 'Friday Prayer Khutbah', category: 'Religious', description: 'Weekly Friday sermon.', date: '20 Mar 2026', startTime: '01:00 PM', endTime: '02:00 PM', status: 'sent', speaker: 'Sheikh Ahmed', location: 'Main Hall' },
-    // Mar 22 (Sun)
-    { id: '44', title: 'Sisters Halaqah', category: 'Religious', description: 'Weekly sisters study circle.', date: '22 Mar 2026', startTime: '10:30 AM', endTime: '12:00 PM', status: 'sent', speaker: 'Ustadha Fatima', location: 'Sisters Hall' },
-    // Mar 25 (Wed)
-    { id: '45', title: 'Ramadan Prep Talk', category: 'Religious', description: 'Getting ready for the blessed month.', date: '25 Mar 2026', startTime: '07:00 PM', endTime: '08:30 PM', status: 'sent', speaker: 'Sheikh Ahmed', location: 'Main Hall' },
-    // Mar 27 (Fri)
-    { id: '46', title: 'Friday Prayer Khutbah', category: 'Religious', description: 'Weekly Friday sermon.', date: '27 Mar 2026', startTime: '01:00 PM', endTime: '02:00 PM', status: 'sent', speaker: 'Sheikh Ahmed', location: 'Main Hall' },
-    { id: '47', title: 'Community Dinner', category: 'Community', description: 'End of month community dinner.', date: '27 Mar 2026', startTime: '06:30 PM', endTime: '09:00 PM', status: 'sent', location: 'Main Hall' },
-    // Mar 29 (Sun)
-    { id: '48', title: 'Sisters Halaqah', category: 'Religious', description: 'Weekly sisters study circle.', date: '29 Mar 2026', startTime: '10:30 AM', endTime: '12:00 PM', status: 'sent', speaker: 'Ustadha Fatima', location: 'Sisters Hall' },
-];
+// Date/Time helper functions
+function formatDate(isoString: string) {
+    if (!isoString) return '';
+    try {
+        const date = new Date(isoString);
+        return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch {
+        return '';
+    }
+}
 
-const mockAnnouncements: Announcement[] = [
-    {
-        id: '1',
-        title: 'Masjid Maintanence Work Tomorrow',
-        description: 'Please note that the masjid will undego light maintanence.....',
-        message: 'Please note that the masjid will undego light maintanence.....',
-        date: '17 Oct 2025',
-        time: '09:00 AM',
-        status: 'scheduled',
-    },
-    {
-        id: '2',
-        title: 'Masjid Maintanence Work Tomorrow',
-        description: 'Please note that the masjid will undego light maintanence.....',
-        message: 'Please note that the masjid will undego light maintanence.....',
-        date: '17 Oct 2025',
-        time: '09:00 AM',
-        status: 'sent',
-    },
-    {
-        id: '3',
-        title: 'Friday Prayer Update',
-        description: 'Jumuah prayer time has been updated for the summer schedule.',
-        message: 'Jumuah prayer time has been updated for the summer schedule.',
-        date: '15 Oct 2025',
-        time: '01:30 PM',
-        status: 'sent',
-    },
-];
+function formatTime(isoString: string) {
+    if (!isoString) return '';
+    try {
+        const date = new Date(isoString);
+        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    } catch {
+        return '';
+    }
+}
 
 export default function EventsPage() {
     const [activeTab, setActiveTab] = useState<'events' | 'announcements'>('events');
-    const [activeFilter, setActiveFilter] = useState<'All' | 'Upcoming' | 'Past' | 'Drafts'>('All');
-    const [announcementFilter, setAnnouncementFilter] = useState<'All' | 'Scheduled'>('All');
     const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+    
+    // --- Events State ---
+    const [events, setEvents] = useState<EventType[]>([]);
+    const [eventsLoading, setEventsLoading] = useState(false);
+    const [activeFilter, setActiveFilter] = useState<'All' | 'Upcoming' | 'Past' | 'Drafts'>('All');
     const [searchQuery, setSearchQuery] = useState('');
-    const [announcementSearchQuery, setAnnouncementSearchQuery] = useState('');
     const [eventsPage, setEventsPage] = useState(1);
+    const [eventsPagination, setEventsPagination] = useState({ totalPages: 1, totalElements: 0, size: 10 });
+    
+    // --- Announcements State ---
+    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+    const [announcementsLoading, setAnnouncementsLoading] = useState(false);
+    const [announcementFilter, setAnnouncementFilter] = useState<'All' | 'Scheduled' | 'Sent'>('All');
+    const [announcementSearchQuery, setAnnouncementSearchQuery] = useState('');
     const [announcementsPage, setAnnouncementsPage] = useState(1);
-    const ITEMS_PER_PAGE = 10;
+    const [announcementsPagination, setAnnouncementsPagination] = useState({ totalPages: 1, totalElements: 0, size: 10 });
 
-    // Modal State
+    // --- Modal State ---
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isAddAnnouncementOpen, setIsAddAnnouncementOpen] = useState(false);
     const [editingEvent, setEditingEvent] = useState<EventType | null>(null);
     const [viewEvent, setViewEvent] = useState<EventType | null>(null);
+    const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
 
+    // --- API Fetching: Events ---
+    const fetchEvents = useCallback(async () => {
+        setEventsLoading(true);
+        try {
+            // Determine status filter parameter based on UI activeFilter
+            let statusParam;
+            let upcomingParam;
+            let pastParam;
+
+            if (activeFilter === 'Drafts') statusParam = 'draft';
+            if (activeFilter === 'Upcoming') upcomingParam = true;
+            if (activeFilter === 'Past') pastParam = true;
+
+            const response = await getEvents({
+                page: eventsPage - 1, // backend is 0-indexed
+                size: 10,
+                search: searchQuery || undefined,
+                status: statusParam as any,
+                upcoming: upcomingParam,
+                past: pastParam,
+            });
+
+            // Process backend data for UI display
+            const processedEvents = response.content.map(evt => ({
+                ...evt,
+                // Assign UI helper fields derived from backend ISO date representations
+                date: evt.date ? formatDate(evt.date) : '',
+                startTime: evt.date ? formatTime(evt.date) : '',
+                // If backend does not provide endTime yet natively, keep it blank or derived.
+                endTime: '',
+            }));
+
+            setEvents(processedEvents);
+            setEventsPagination({
+                totalPages: response.pagination.totalPages,
+                totalElements: response.pagination.totalElements,
+                size: response.pagination.size,
+            });
+        } catch (error) {
+            console.error('Failed to fetch events:', error);
+            // Optionally set error state here
+        } finally {
+            setEventsLoading(false);
+        }
+    }, [eventsPage, searchQuery, activeFilter]);
+
+    // --- API Fetching: Announcements ---
+    const fetchAnnouncements = useCallback(async () => {
+        setAnnouncementsLoading(true);
+        try {
+            let statusParam;
+            if (announcementFilter === 'Scheduled') statusParam = 'scheduled';
+            if (announcementFilter === 'Sent') statusParam = 'sent';
+
+            const response = await getAnnouncements({
+                page: announcementsPage - 1, // backend is 0-indexed
+                size: 10,
+                search: announcementSearchQuery || undefined,
+                status: statusParam as any,
+            });
+
+             const processedAnnouncements = response.content.map(ann => ({
+                ...ann,
+                // Map Backend DTO field "scheduledAt" to "date" and "time" for UI table
+                date: ann.scheduledAt ? formatDate(ann.scheduledAt) : (ann.createdAt ? formatDate(ann.createdAt) : ''),
+                time: ann.scheduledAt ? formatTime(ann.scheduledAt) : (ann.createdAt ? formatTime(ann.createdAt) : ''),
+            }));
+
+            setAnnouncements(processedAnnouncements);
+            setAnnouncementsPagination({
+                totalPages: response.pagination.totalPages,
+                totalElements: response.pagination.totalElements,
+                size: response.pagination.size,
+            });
+        } catch (error) {
+            console.error('Failed to fetch announcements:', error);
+        } finally {
+            setAnnouncementsLoading(false);
+        }
+    }, [announcementsPage, announcementSearchQuery, announcementFilter]);
+
+    // --- Fetch Triggers ---
+    useEffect(() => {
+        if (activeTab === 'events') {
+            // Debounce search
+            const timer = setTimeout(() => {
+                fetchEvents();
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, [fetchEvents, activeTab]);
+
+    useEffect(() => {
+        if (activeTab === 'announcements') {
+            const timer = setTimeout(() => {
+                fetchAnnouncements();
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, [fetchAnnouncements, activeTab]);
+
+
+    // --- Handlers ---
     const handleAddEvent = () => {
         if (activeTab === 'announcements') {
+            setEditingAnnouncement(null);
             setIsAddAnnouncementOpen(true);
         } else {
             setEditingEvent(null);
@@ -164,7 +181,7 @@ export default function EventsPage() {
     };
 
     const handleEditEvent = (event: EventType) => {
-        if (viewEvent) setViewEvent(null); // Close view modal if open
+        if (viewEvent) setViewEvent(null); 
         setEditingEvent(event);
         setIsAddModalOpen(true);
     };
@@ -173,42 +190,51 @@ export default function EventsPage() {
         setViewEvent(event);
     };
 
+    const handleDeleteEvent = async (id: string) => {
+        await deleteEvent(id);
+        fetchEvents();
+    };
+
+    const handleEditAnnouncement = (announcement: Announcement) => {
+        setEditingAnnouncement(announcement);
+        setIsAddAnnouncementOpen(true);
+    };
+
+    const handleDeleteAnnouncement = async (id: string) => {
+        if (window.confirm("Are you sure you want to delete this announcement?")) {
+            try {
+                await deleteAnnouncement(id);
+                fetchAnnouncements();
+            } catch (err) {
+                console.error("Failed to delete announcement", err);
+                alert("Failed to delete announcement.");
+            }
+        }
+    };
+
     const handleCloseAddModal = () => {
         setIsAddModalOpen(false);
         setEditingEvent(null);
+        // Refresh after create/edit
+        fetchEvents();
     };
+
+    const handleCloseAddAnnouncement = () => {
+        setIsAddAnnouncementOpen(false);
+        setEditingAnnouncement(null);
+        fetchAnnouncements();
+    }
 
     const handleCloseViewModal = () => {
         setViewEvent(null);
     };
 
+    // --- Pagination Computations ---
+    const eventsRangeStart = eventsPagination.totalElements === 0 ? 0 : (eventsPage - 1) * eventsPagination.size + 1;
+    const eventsRangeEnd = Math.min(eventsPage * eventsPagination.size, eventsPagination.totalElements);
 
-    const filteredEvents = mockEvents.filter((event) => {
-        const matchesFilter = (() => {
-            if (activeFilter === 'All') return true;
-            if (activeFilter === 'Upcoming') return event.status === 'sent';
-            if (activeFilter === 'Past') return event.status === 'past';
-            if (activeFilter === 'Drafts') return event.status === 'draft';
-            return true;
-        })();
-        const matchesSearch = searchQuery.trim() === '' || event.title.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesFilter && matchesSearch;
-    });
-
-    const eventsTotalPages = Math.max(1, Math.ceil(filteredEvents.length / ITEMS_PER_PAGE));
-    const paginatedEvents = filteredEvents.slice((eventsPage - 1) * ITEMS_PER_PAGE, eventsPage * ITEMS_PER_PAGE);
-    const eventsRangeStart = filteredEvents.length === 0 ? 0 : (eventsPage - 1) * ITEMS_PER_PAGE + 1;
-    const eventsRangeEnd = Math.min(eventsPage * ITEMS_PER_PAGE, filteredEvents.length);
-
-    const filteredAnnouncements = mockAnnouncements.filter(a => {
-        const matchesFilter = announcementFilter === 'All' ? true : a.status === 'scheduled';
-        const matchesSearch = announcementSearchQuery.trim() === '' || a.title.toLowerCase().includes(announcementSearchQuery.toLowerCase());
-        return matchesFilter && matchesSearch;
-    });
-    const announcementsTotalPages = Math.max(1, Math.ceil(filteredAnnouncements.length / ITEMS_PER_PAGE));
-    const paginatedAnnouncements = filteredAnnouncements.slice((announcementsPage - 1) * ITEMS_PER_PAGE, announcementsPage * ITEMS_PER_PAGE);
-    const announcementsRangeStart = filteredAnnouncements.length === 0 ? 0 : (announcementsPage - 1) * ITEMS_PER_PAGE + 1;
-    const announcementsRangeEnd = Math.min(announcementsPage * ITEMS_PER_PAGE, filteredAnnouncements.length);
+    const announcementsRangeStart = announcementsPagination.totalElements === 0 ? 0 : (announcementsPage - 1) * announcementsPagination.size + 1;
+    const announcementsRangeEnd = Math.min(announcementsPage * announcementsPagination.size, announcementsPagination.totalElements);
 
     return (
         <div className="space-y-[24px]">
@@ -259,6 +285,7 @@ export default function EventsPage() {
                     Announcements
                 </button>
             </div>
+
 
             {/* Content Area */}
             {activeTab === 'events' ? (
@@ -340,7 +367,7 @@ export default function EventsPage() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-none bg-white">
-                                        {paginatedEvents.map((event) => (
+                                        {events.map((event) => (
                                             <tr key={event.id} className="group hover:bg-[#fafbfb] transition-colors duration-150">
                                                 <td className="w-[52px] h-[70px] px-[16px] py-[22px]">
                                                     <input type="checkbox" className="w-[20px] h-[20px] rounded-[4px] border-[#e2e8f0] text-[var(--brand)] focus:ring-0 checked:bg-[var(--brand)] cursor-pointer transition-colors" />
@@ -393,14 +420,14 @@ export default function EventsPage() {
                                 {/* Pagination Footer */}
                                 <div className="flex items-center justify-between h-[40px] px-0 mt-0 border-t border-[var(--border-01)] bg-white relative w-full">
                                     <p className="absolute left-0 top-[10px] font-dm-sans text-[14px] text-[#666d80]">
-                                        {eventsRangeStart}-{eventsRangeEnd} of {filteredEvents.length} items
+                                        {eventsRangeStart}-{eventsRangeEnd} of {eventsPagination.totalElements} items
                                     </p>
                                     <div className="absolute right-[64px] top-[8px] flex items-center gap-[8px]">
                                         <div className="bg-white h-[23px] px-[11px] rounded-[8px] flex items-center justify-center gap-[8px] cursor-pointer">
                                             <span className="font-dm-sans text-[14px] text-[#666d80]">{eventsPage}</span>
                                             <ChevronDownIcon size={16} className="text-[#666d80]" />
                                         </div>
-                                        <span className="font-dm-sans text-[14px] text-[#666d80]">of {eventsTotalPages} pages</span>
+                                        <span className="font-dm-sans text-[14px] text-[#666d80]">of {eventsPagination.totalPages} pages</span>
                                     </div>
                                     <div className="absolute right-0 top-1/2 -translate-y-[calc(50%-0.5px)] flex items-center gap-[8px]">
                                         <button
@@ -411,8 +438,8 @@ export default function EventsPage() {
                                             <ChevronLeftIcon size={16} className="text-[#666d80] stroke-[1.5]" />
                                         </button>
                                         <button
-                                            onClick={() => setEventsPage(p => Math.min(eventsTotalPages, p + 1))}
-                                            disabled={eventsPage >= eventsTotalPages}
+                                            onClick={() => setEventsPage(p => Math.min(eventsPagination.totalPages, p + 1))}
+                                            disabled={eventsPage >= eventsPagination.totalPages}
                                             className="flex items-center justify-center p-1 hover:bg-gray-100 rounded transition-colors disabled:opacity-30"
                                         >
                                             <ChevronRightIcon size={16} className="text-[#666d80] stroke-[1.5]" />
@@ -423,7 +450,7 @@ export default function EventsPage() {
                         </div>
                     ) : (
                         <CalendarView
-                            events={filteredEvents}
+                            events={events}
                             currentDate={new Date()}
                             onDateChange={() => { }}
                             viewMode={viewMode}
@@ -491,7 +518,7 @@ export default function EventsPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-none bg-white">
-                                {paginatedAnnouncements.map((announcement) => (
+                                {announcements.map((announcement) => (
                                         <tr key={announcement.id} className="group hover:bg-[#fafbfb] transition-colors duration-150">
                                             <td className="w-[52px] h-[70px] px-[16px] py-[22px]">
                                                 <input type="checkbox" className="w-[20px] h-[20px] rounded-[4px] border-[#e2e8f0] text-[var(--brand)] focus:ring-0 checked:bg-[var(--brand)] cursor-pointer transition-colors" />
@@ -519,11 +546,17 @@ export default function EventsPage() {
                                             </td>
                                             <td className="h-[70px] px-[16px] py-[22px]">
                                                 <div className="flex items-center gap-[12px]">
-                                                    <button className="text-[#666d80] hover:text-[var(--grey-800)] transition-colors">
-                                                        <EyeIcon size={20} />
-                                                    </button>
-                                                    <button className="text-[#666d80] hover:text-[var(--grey-800)] transition-colors">
+                                                    <button 
+                                                        onClick={() => handleEditAnnouncement(announcement)}
+                                                        className="text-[#666d80] hover:text-[var(--brand)] transition-colors p-1 hover:bg-[var(--brand-05)] rounded"
+                                                    >
                                                         <EditIcon size={20} />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => handleDeleteAnnouncement(announcement.id)}
+                                                        className="text-[#666d80] hover:text-red-500 transition-colors p-1 hover:bg-red-50 rounded"
+                                                    >
+                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                                                     </button>
                                                 </div>
                                             </td>
@@ -536,7 +569,7 @@ export default function EventsPage() {
                     {/* Pagination Footer */}
                     <div className="flex justify-between items-center mt-[8px] h-[40px] border-t border-[var(--border-01)] pt-[8px]">
                         <span className="font-['DM_Sans'] font-normal text-[14px] text-[#666d80]">
-                            {announcementsRangeStart}-{announcementsRangeEnd} of {filteredAnnouncements.length} items
+                            {announcementsRangeStart}-{announcementsRangeEnd} of {announcementsPagination.totalElements} items
                         </span>
                         <div className="flex items-center gap-[8px]">
                             <div className="flex items-center gap-[8px]">
@@ -544,7 +577,7 @@ export default function EventsPage() {
                                     <span className="font-['DM_Sans'] font-normal text-[14px] text-[#666d80]">{announcementsPage}</span>
                                     <ChevronDownIcon size={16} className="text-[#666d80]" />
                                 </div>
-                                <span className="font-['DM_Sans'] font-normal text-[14px] text-[#666d80]">of {announcementsTotalPages} pages</span>
+                                <span className="font-['DM_Sans'] font-normal text-[14px] text-[#666d80]">of {announcementsPagination.totalPages} pages</span>
                             </div>
                             <div className="flex items-center gap-[8px]">
                                 <button
@@ -555,8 +588,8 @@ export default function EventsPage() {
                                     <ChevronLeftIcon size={16} className="text-[#666d80] stroke-[1.5]" />
                                 </button>
                                 <button
-                                    onClick={() => setAnnouncementsPage(p => Math.min(announcementsTotalPages, p + 1))}
-                                    disabled={announcementsPage >= announcementsTotalPages}
+                                    onClick={() => setAnnouncementsPage(p => Math.min(announcementsPagination.totalPages, p + 1))}
+                                    disabled={announcementsPage >= announcementsPagination.totalPages}
                                     className="flex items-center justify-center p-1 hover:bg-gray-100 rounded transition-colors disabled:opacity-30"
                                 >
                                     <ChevronRightIcon size={16} className="text-[#666d80] stroke-[1.5]" />
@@ -578,10 +611,12 @@ export default function EventsPage() {
                 onClose={handleCloseViewModal}
                 event={viewEvent}
                 onEdit={handleEditEvent}
+                onDelete={handleDeleteEvent}
             />
             <AddAnnouncementModal
                 isOpen={isAddAnnouncementOpen}
-                onClose={() => setIsAddAnnouncementOpen(false)}
+                onClose={handleCloseAddAnnouncement}
+                announcement={editingAnnouncement}
             />
         </div>
     );

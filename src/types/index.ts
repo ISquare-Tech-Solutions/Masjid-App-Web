@@ -10,25 +10,42 @@ export interface PrayerTime {
 export interface Event {
   id: string;
   title: string;
-  category: string;
-  description: string;
   speaker?: string;
-  location?: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  status: 'sent' | 'draft' | 'past';
+  date: string; // Backend returns ISO-8601 string (e.g., "2025-02-15T18:00:00")
+  link?: string;
+  images?: string[];
+  description: string;
+  venue: string; // Backend uses 'venue', UI sometimes mapped it to 'location'
+  status: 'draft' | 'published' | 'cancelled' | 'completed' | 'sent' | 'past'; // Extended to include Figma UI statuses + Backend statuses
+  notificationSent?: boolean;
+  notificationSentAt?: string;
+  createdBy?: string;
+  publishedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  
+  // UI Specific helper fields (not always from backend)
+  category?: string; 
+  startTime?: string;
+  endTime?: string;
+  location?: string; // Legacy UI mapping
 }
 
 // Announcement Types
 export interface Announcement {
   id: string;
   title: string;
-  date: string;
-  description: string;
-  message?: string;
+  message: string; // Backend uses 'message'
+  scheduledAt?: string; // ISO-8601 string
+  status: 'draft' | 'scheduled' | 'sent';
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  
+  // UI Specific helper fields
+  description?: string; // Legacy UI mapping
+  date?: string;
   time?: string;
-  status?: 'sent' | 'scheduled';
 }
 
 // Campaign Types

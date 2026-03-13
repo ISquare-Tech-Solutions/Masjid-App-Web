@@ -236,7 +236,7 @@ export default function CalendarView({
                                                 `}
                                             >
                                                 <p className="font-urbanist font-normal text-[14px] text-[var(--grey-800)] leading-[1.25] whitespace-nowrap pl-[4px] h-full flex items-center">
-                                                    {event.startTime.replace(' AM', ' am').replace(' PM', ' pm')} {event.title}
+                                                    {(event.startTime || '').replace(' AM', ' am').replace(' PM', ' pm')} {event.title}
                                                 </p>
                                             </div>
                                         ))}

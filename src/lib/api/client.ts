@@ -165,3 +165,69 @@ export function put<T>(endpoint: string, data?: unknown): Promise<T> {
 export function del<T>(endpoint: string): Promise<T> {
     return request<T>(endpoint, { method: 'DELETE' });
 }
+
+// ============================================
+// FormData methods (for file uploads)
+// ============================================
+
+/**
+ * Executes a fetch request specifically for FormData (multipart/form-data).
+ * We omit 'Content-Type' so the browser can set it with the correct boundary.
+ */
+async function requestFormData<T>(
+    endpoint: string,
+    method: 'POST' | 'PUT',
+    formData: FormData,
+    retry = true
+): Promise<T> {
+    const headers: Record<string, string> = {};
+
+    // Attach access token if available
+    const token = getAccessToken();
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    console.log(`[API Request FormData] ${method} ${endpoint}`);
+
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method,
+        body: formData,
+        headers,
+        credentials: 'include',
+    });
+
+    console.log(`[API Response FormData] ${method} ${endpoint} -> ${response.status}`);
+
+    // Handle 401 — try refreshing the token once
+    if (response.status === 401 && retry) {
+        const newToken = await refreshAccessToken();
+        if (newToken) {
+            return requestFormData<T>(endpoint, method, formData, false);
+        }
+        setAccessToken(null);
+    }
+
+    const body = await response.json().catch(() => null);
+
+    if (!response.ok) {
+        const errorBody = body as ApiErrorResponse | null;
+        throw new ApiError(
+            response.status,
+            errorBody?.error?.code || 'UNKNOWN_ERROR',
+            errorBody?.error?.message || 'An unexpected error occurred',
+            errorBody?.error?.details
+        );
+    }
+
+    return body as T;
+}
+
+export function postFormData<T>(endpoint: string, formData: FormData): Promise<T> {
+    return requestFormData<T>(endpoint, 'POST', formData);
+}
+
+export function putFormData<T>(endpoint: string, formData: FormData): Promise<T> {
+    return requestFormData<T>(endpoint, 'PUT', formData);
+}
+
