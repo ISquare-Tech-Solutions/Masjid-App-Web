@@ -38,6 +38,7 @@ const upcomingEvents: Event[] = [
     description:
       'A casual community meet-up after Isha Prayer to discuss upcoming activities and strength our bonds as a community...',
     speaker: 'Ustadh Sultan Ahmed',
+    venue: 'Masjid Abu Bakar',
     date: '17 Oct 2025',
     startTime: '07:00 PM',
     endTime: '08:30 PM',
@@ -50,6 +51,7 @@ const upcomingEvents: Event[] = [
     description:
       'A casual community meet-up after Isha Prayer to discuss upcoming activities and strength our bonds as a community...',
     speaker: 'Ustadh Sultan Ahmed',
+    venue: 'Masjid Abu Bakar',
     date: '17 Oct 2025',
     startTime: '07:00 PM',
     endTime: '08:30 PM',

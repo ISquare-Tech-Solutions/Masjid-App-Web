@@ -19,8 +19,8 @@ interface TimePickerProps {
 function parseTime(val?: string) {
     if (!val) return { h: '12', m: '00', p: 'AM' };
     const parts = val.split(':');
-    let hoursStr = parts[0] || '12';
-    let minutesStr = parts[1] || '00';
+    const hoursStr = parts[0] || '12';
+    const minutesStr = parts[1] || '00';
     let hours = parseInt(hoursStr, 10);
     if (isNaN(hours)) hours = 12;
     const p = hours >= 12 ? 'PM' : 'AM';
@@ -133,10 +133,10 @@ export default function TimePicker({
 
     /* ── Typing in input ── */
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        let val = e.target.value;
+        const val = e.target.value;
         const isDeleting = val.length < inputValue.length;
 
-        let digits = val.replace(/[^\d]/g, '').slice(0, 4);
+        const digits = val.replace(/[^\d]/g, '').slice(0, 4);
 
         if (isDeleting) {
             setInputValue(val);
@@ -148,12 +148,12 @@ export default function TimePicker({
         if (digits.length > 0) {
             let hStr = digits.substring(0, 2);
             if (hStr.length === 2) {
-                let hVal = parseInt(hStr, 10);
+                const hVal = parseInt(hStr, 10);
                 if (hVal > 12) hStr = '12';
                 if (hVal === 0) hStr = '01';
                 formatted += hStr;
             } else {
-                let hVal = parseInt(hStr, 10);
+                const hVal = parseInt(hStr, 10);
                 if (hVal > 1) {
                     formatted += `0${hVal}`;
                 } else {
@@ -167,7 +167,7 @@ export default function TimePicker({
         if (digits.length > 2) {
             let mStr = digits.substring(2, 4);
             if (mStr.length === 2) {
-                let mVal = parseInt(mStr, 10);
+                const mVal = parseInt(mStr, 10);
                 if (mVal > 59) mStr = '59';
             }
             formatted += mStr;
@@ -215,7 +215,7 @@ export default function TimePicker({
             return;
         }
 
-        let [, hourStr, minStr, period] = match;
+        const [, hourStr, minStr, period] = match;
         let hour = parseInt(hourStr, 10);
         const min = parseInt(minStr, 10);
 
@@ -224,7 +224,7 @@ export default function TimePicker({
             return;
         }
 
-        let periodNorm = period ? period.toUpperCase() : p;
+        const periodNorm = period ? period.toUpperCase() : p;
 
         if (periodNorm === 'PM' && hour < 12) hour += 12;
         if (periodNorm === 'AM' && hour === 12) hour = 0;

@@ -1,10 +1,9 @@
-'use client';
-
 import { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import { CloseIcon, CalendarIcon, UploadIcon } from '@/components/ui/Icons';
 import TimePicker from '@/components/ui/TimePicker';
 import type { Event } from '@/types';
+import { createEvent, updateEvent } from '@/lib/api/events';
 
 interface AddEventModalProps {
     isOpen: boolean;
@@ -33,23 +32,30 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
     const [speaker, setSpeaker] = useState('');
     const [venue, setVenue] = useState('');
     const [description, setDescription] = useState('');
-    const [eventDate, setEventDate] = useState('');
-    const [startTime, setStartTime] = useState('');
-    const [endTime, setEndTime] = useState('');
+    const [eventDate, setEventDate] = useState(''); // YYYY-MM-DD
+    const [startTime, setStartTime] = useState(''); // HH:MM
+    const [endTime, setEndTime] = useState('');     // HH:MM
     const [link, setLink] = useState('');
+    
+    // Image Upload State
+    const [imageFile, setImageFile] = useState<File | null>(null);
     const [imageName, setImageName] = useState('');
+
+    const [isSaving, setIsSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     // Reset or Populate form when modal opens/event changes
     useEffect(() => {
         if (isOpen) {
+            setError(null);
             if (event) {
-                setTitle(event.title);
+                setTitle(event.title || '');
                 setSpeaker(event.speaker || '');
-                setVenue(event.location || 'Masjid Abu Bakar');
+                setVenue(event.venue || event.location || 'Masjid Abu Bakar');
                 setDescription(event.description || '');
-                // Parse date: "17 Oct 2025" → "2025-10-17"
+                // Parse date: ISO String → "YYYY-MM-DD"
                 try {
-                    const d = new Date(event.date);
+                    const d = new Date(event.date || event.createdAt || Date.now());
                     if (!isNaN(d.getTime())) {
                         setEventDate(d.toISOString().split('T')[0]);
                     } else {
@@ -59,9 +65,11 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
                     setEventDate('');
                 }
                 setStartTime(parseTime12to24(event.startTime || ''));
-                setEndTime(parseTime12to24(event.endTime || ''));
-                setLink('');
-                setImageName('Img.png');
+                setEndTime(parseTime12to24(event.endTime || '')); // currently unused by backend
+                setLink(event.link || '');
+                
+                setImageFile(null);
+                setImageName(event.images && event.images.length > 0 ? 'Existing Image Attached' : '');
             } else {
                 setTitle('');
                 setSpeaker('');
@@ -71,14 +79,60 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
                 setStartTime('');
                 setEndTime('');
                 setLink('');
+                setImageFile(null);
                 setImageName('');
             }
         }
     }, [isOpen, event]);
 
-    const handleSave = (asDraft?: boolean) => {
-        console.log('Saving event:', { title, speaker, venue, description, eventDate, startTime, endTime, link, asDraft });
-        onClose();
+    const handleSave = async (asDraft?: boolean) => {
+        if (!title || !eventDate || !description) {
+            setError("Title, Date, and Description are required fields.");
+            return;
+        }
+
+        setIsSaving(true);
+        setError(null);
+
+        try {
+            // Combine Date and Time into an ISO String payload
+            // Default time to 00:00:00 if no start time is selected
+            const timePart = startTime ? `${startTime}:00` : '00:00:00';
+            const isoDateTime = `${eventDate}T${timePart}Z`;
+
+            const formData = new FormData();
+            
+            // Required DTO fields
+            formData.append('title', title);
+            formData.append('date', isoDateTime);
+            formData.append('description', description);
+            
+            // The backend expects specific string enums (matching UI or backend statuses)
+            // Default "Publish" = 'published' vs "Draft" = 'draft'
+            formData.append('status', asDraft ? 'draft' : 'published');
+
+            // Optional DTO fields
+            if (speaker) formData.append('speaker', speaker);
+            if (venue) formData.append('venue', venue);
+            if (link) formData.append('link', link);
+            
+            // Append Image
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
+
+            if (isEditMode && event?.id) {
+                await updateEvent(event.id, formData);
+            } else {
+                await createEvent(formData);
+            }
+            onClose(); // Parent will refresh data on close
+        } catch (err: any) {
+            setError(err?.message || "An error occurred while saving the event.");
+            console.error('Failed to save event:', err);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -92,10 +146,17 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
                     <button
                         onClick={onClose}
                         className="w-[36px] h-[36px] flex items-center justify-center bg-[rgba(7,119,52,0.1)] rounded-[8px] hover:bg-[rgba(7,119,52,0.2)] transition-colors shrink-0"
+                        disabled={isSaving}
                     >
                         <CloseIcon size={24} className="text-[var(--grey-800)]" />
                     </button>
                 </div>
+                
+                {error && (
+                    <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+                        {error}
+                    </div>
+                )}
 
                 {/* Event Title */}
                 <div className="flex flex-col gap-[8px]">
