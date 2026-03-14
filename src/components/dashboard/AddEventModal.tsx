@@ -118,7 +118,7 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
             
             // Append Image
             if (imageFile) {
-                formData.append('image', imageFile);
+                formData.append('images', imageFile);
             }
 
             if (isEditMode && event?.id) {
@@ -301,6 +301,7 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
                                     accept="image/*"
                                     onChange={(e) => {
                                         if (e.target.files?.[0]) {
+                                            setImageFile(e.target.files[0]);
                                             setImageName(e.target.files[0].name);
                                         }
                                     }}
