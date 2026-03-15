@@ -106,22 +106,19 @@ export default function EventDetailsModal({ isOpen, onClose, event, onEdit, onDe
                     {/* Message / Description */}
                     <div className="flex items-start gap-4">
                         <div className="w-[175px] shrink-0 text-[16px] font-medium font-inter text-[#666d80]">
-                            Description
+                            Message
                         </div>
                         <div className="flex-1 space-y-4">
                             <div className="text-[16px] font-medium font-inter text-[var(--grey-800)] whitespace-pre-wrap">
                                 {event.description || 'No description provided.'}
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Status Badge */}
-                    <div className="flex items-start gap-4">
-                        <div className="w-[175px] shrink-0 text-[16px] font-medium font-inter text-[#666d80]">
-                            Status
-                        </div>
-                        <div className="text-[16px] font-medium font-inter text-[var(--grey-800)] uppercase">
-                            {event.status}
+                            {event.images && event.images.length > 0 && (
+                                <img
+                                    src={event.images[0]}
+                                    alt={event.title}
+                                    className="w-full max-h-[300px] object-cover rounded-[12px]"
+                                />
+                            )}
                         </div>
                     </div>
                 </div>
