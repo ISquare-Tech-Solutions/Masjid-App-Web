@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { UploadIcon } from '@/components/ui/Icons';
-import { getSettings, updateSettings, updatePaymentSettings } from '@/lib/api/settings';
+import { getSettings, updateSettings, updatePaymentSettings, connectStripe, disconnectStripe } from '@/lib/api/settings';
 import type {
   MasjidSettingsResponse,
   MasjidServices,
   MasjidFacilities,
+  StripeStatus,
 } from '@/types/settings';
 
 const Checkbox = ({
@@ -130,10 +132,14 @@ const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 
 };
 
 export default function SettingsPage() {
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'masjid' | 'bank'>('masjid');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
+  const [connectingStripe, setConnectingStripe] = useState(false);
+  const [disconnectingStripe, setDisconnectingStripe] = useState(false);
+  const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Masjid details form state
@@ -200,6 +206,8 @@ export default function SettingsPage() {
     setBankName(data.payment?.bankName || '');
     setBankAccountNumber(data.payment?.bankAccountNumber || '');
     setBankSortCode(data.payment?.bankSortCode || '');
+
+    if (data.stripe) setStripeStatus(data.stripe);
   }, []);
 
   const fetchSettings = useCallback(async () => {
@@ -218,6 +226,49 @@ export default function SettingsPage() {
   useEffect(() => {
     fetchSettings();
   }, [fetchSettings]);
+
+  // Detect Stripe redirect back after onboarding
+  useEffect(() => {
+    const stripeParam = searchParams.get('stripe');
+    if (stripeParam === 'success') {
+      setActiveTab('bank');
+      setToast({ message: 'Stripe connected! Syncing account status...', type: 'success' });
+      fetchSettings();
+    } else if (stripeParam === 'refresh') {
+      setActiveTab('bank');
+      setToast({ message: 'Stripe onboarding expired. Please reconnect.', type: 'error' });
+    }
+  }, [searchParams, fetchSettings]);
+
+  const handleConnectStripe = async () => {
+    try {
+      setConnectingStripe(true);
+      const origin = window.location.origin;
+      const returnUrl = `${origin}/settings?stripe=success`;
+      const refreshUrl = `${origin}/settings?stripe=refresh`;
+      const onboardingUrl = await connectStripe(returnUrl, refreshUrl);
+      window.location.href = onboardingUrl;
+    } catch (err) {
+      console.error('Failed to connect Stripe:', err);
+      setToast({ message: 'Failed to start Stripe onboarding. Check configuration.', type: 'error' });
+      setConnectingStripe(false);
+    }
+  };
+
+  const handleDisconnectStripe = async () => {
+    if (!window.confirm('Are you sure you want to disconnect Stripe? Donations will be disabled.')) return;
+    try {
+      setDisconnectingStripe(true);
+      await disconnectStripe();
+      setStripeStatus({ accountId: null, connected: false, onboardingComplete: false, acceptingDonations: false, payoutsEnabled: false });
+      setToast({ message: 'Stripe account disconnected.', type: 'success' });
+    } catch (err) {
+      console.error('Failed to disconnect Stripe:', err);
+      setToast({ message: 'Failed to disconnect Stripe.', type: 'error' });
+    } finally {
+      setDisconnectingStripe(false);
+    }
+  };
 
   const handleSaveMasjidDetails = async () => {
     if (!name.trim()) {
@@ -540,6 +591,77 @@ export default function SettingsPage() {
         ) : (
           <div className="border border-[#e2e8f0] rounded-[24px] p-[24px] flex flex-col gap-[24px]">
             <h2 className="font-urbanist font-semibold text-[20px] text-[#36394a]">BANK &amp; PAYMENT SETTINGS</h2>
+            <div className="h-[2px] bg-[#f6f6f6] rounded-[2px]" />
+
+            {/* Stripe Connect */}
+            <div className="flex gap-[24px]">
+              <div className="flex flex-col gap-[8px] flex-1">
+                <h3 className="font-urbanist font-semibold text-[18px] text-[#36394a]">Stripe Connect</h3>
+                <p className="text-[14px] text-[#666d80] leading-[1.4] max-w-[300px]">
+                  Connect your Stripe account to accept online donations. Stripe handles all card payments, Apple Pay, and Google Pay securely.
+                </p>
+              </div>
+              <div className="flex-1">
+                {stripeStatus?.connected ? (
+                  <div className="flex flex-col gap-[16px]">
+                    {/* Status badges */}
+                    <div className="flex flex-col gap-[10px]">
+                      <div className="flex items-center gap-[8px]">
+                        <div className={`w-[8px] h-[8px] rounded-full ${stripeStatus.acceptingDonations ? 'bg-[var(--brand)]' : 'bg-amber-400'}`} />
+                        <span className="font-urbanist text-[14px] text-[#4b4b4b]">
+                          Accepting Donations: <strong>{stripeStatus.acceptingDonations ? 'Enabled' : 'Pending'}</strong>
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-[8px]">
+                        <div className={`w-[8px] h-[8px] rounded-full ${stripeStatus.payoutsEnabled ? 'bg-[var(--brand)]' : 'bg-amber-400'}`} />
+                        <span className="font-urbanist text-[14px] text-[#4b4b4b]">
+                          Payouts to Bank: <strong>{stripeStatus.payoutsEnabled ? 'Enabled' : 'Pending'}</strong>
+                        </span>
+                      </div>
+                      {!stripeStatus.onboardingComplete && (
+                        <p className="text-[13px] text-amber-600 bg-amber-50 px-[12px] py-[8px] rounded-[8px]">
+                          Onboarding incomplete — complete your Stripe setup to start accepting donations.
+                        </p>
+                      )}
+                    </div>
+                    {/* Actions */}
+                    <div className="flex gap-[12px]">
+                      {!stripeStatus.onboardingComplete && (
+                        <button
+                          onClick={handleConnectStripe}
+                          disabled={connectingStripe}
+                          className="h-[40px] px-[20px] bg-[var(--brand)] text-white rounded-[10px] font-urbanist font-medium text-[14px] hover:bg-[#065d29] transition-colors disabled:opacity-50"
+                        >
+                          {connectingStripe ? 'Redirecting...' : 'Complete Setup'}
+                        </button>
+                      )}
+                      <button
+                        onClick={handleDisconnectStripe}
+                        disabled={disconnectingStripe}
+                        className="h-[40px] px-[20px] border border-red-200 text-red-600 rounded-[10px] font-urbanist font-medium text-[14px] hover:bg-red-50 transition-colors disabled:opacity-50"
+                      >
+                        {disconnectingStripe ? 'Disconnecting...' : 'Disconnect'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-[12px]">
+                    <div className="flex items-center gap-[8px]">
+                      <div className="w-[8px] h-[8px] rounded-full bg-gray-300" />
+                      <span className="font-urbanist text-[14px] text-[#666d80]">Not connected</span>
+                    </div>
+                    <button
+                      onClick={handleConnectStripe}
+                      disabled={connectingStripe}
+                      className="w-fit h-[44px] px-[24px] bg-[var(--brand)] text-white rounded-[12px] font-urbanist font-medium text-[16px] hover:bg-[#065d29] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {connectingStripe ? 'Redirecting to Stripe...' : 'Connect Stripe Account'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="h-[2px] bg-[#f6f6f6] rounded-[2px]" />
 
             <div className="flex gap-[24px]">

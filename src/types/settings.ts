@@ -50,6 +50,14 @@ export interface MasjidPayment {
     bankSortCode: string | null;
 }
 
+export interface StripeStatus {
+    accountId: string | null;
+    connected: boolean;
+    onboardingComplete: boolean;
+    acceptingDonations: boolean;
+    payoutsEnabled: boolean;
+}
+
 export interface MasjidSettingsResponse {
     id: string;
     name: string;
@@ -62,6 +70,7 @@ export interface MasjidSettingsResponse {
     services: MasjidServices;
     facilities: MasjidFacilities;
     payment: MasjidPayment;
+    stripe: StripeStatus;
     createdAt: string;
     updatedAt: string;
 }
