@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { UploadIcon } from '@/components/ui/Icons';
-import { getSettings, updateSettings, updatePaymentSettings, connectStripe, disconnectStripe } from '@/lib/api/settings';
+import { getSettings, updateSettings, updatePaymentSettings, connectStripe, disconnectStripe, getStripeStatus } from '@/lib/api/settings';
 import type {
   MasjidSettingsResponse,
   MasjidServices,
