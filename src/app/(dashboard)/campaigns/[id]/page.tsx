@@ -1,25 +1,67 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronLeftIcon, EditIcon } from '@/components/ui/Icons';
 import DonationHistoryTable from './components/DonationHistoryTable';
 import EndCampaignModal from './components/EndCampaignModal';
 import Link from 'next/link';
+import { getCampaignById, updateCampaignStatus } from '@/lib/api/campaigns';
+import type { Campaign } from '@/types';
+import { use } from 'react';
 
-export default function CampaignDetailsPage({ params }: { params: { id: string } }) {
+const STATUS_COLORS: Record<string, { border: string; text: string }> = {
+  active:    { border: 'border-[#6bc497]', text: 'text-[#47b881]' },
+  paused:    { border: 'border-[#ffc62b]', text: 'text-[#ffad0d]' },
+  completed: { border: 'border-[#eb6f70]', text: 'text-[#f64c4c]' },
+  draft:     { border: 'border-[#ffc62b]', text: 'text-[#ffad0d]' },
+  cancelled: { border: 'border-[#eb6f70]', text: 'text-[#f64c4c]' },
+};
+
+export default function CampaignDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const [campaign, setCampaign] = useState<Campaign | null>(null);
+  const [loading, setLoading] = useState(true);
   const [isEndModalOpen, setIsEndModalOpen] = useState(false);
 
-  const campaign = {
-    title: 'Help Build New Wudu Area',
-    cause: 'Masjid Development',
-    description: 'Support the construction of a new Wudu area to make the masjid more accessible and comfortable for all community members.',
-    goal: '£15,000',
-    raised: '£10,500',
-    startDate: '21 Nov 2025',
-    endDate: '05 Dec 2025',
-    progress: 70,
-    status: 'Active',
+  useEffect(() => {
+    getCampaignById(id)
+      .then(setCampaign)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  const handleEndCampaign = async () => {
+    await updateCampaignStatus(id, 'completed');
+    setCampaign(prev => prev ? { ...prev, status: 'completed' } : prev);
   };
+
+  const formatDate = (d?: string) =>
+    d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+
+  const progress = campaign && campaign.goalAmount > 0
+    ? Math.min(Math.round(((campaign.raisedAmount ?? 0) / campaign.goalAmount) * 100), 100)
+    : 0;
+
+  const statusStyle = campaign ? (STATUS_COLORS[campaign.status] ?? { border: 'border-[#e2e8f0]', text: 'text-[#667085]' }) : null;
+  const isEditable = campaign && (campaign.status === 'draft' || campaign.status === 'active' || campaign.status === 'paused');
+  const isEndable = campaign && (campaign.status === 'active' || campaign.status === 'paused');
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[300px] text-[var(--neutral-500)]">Loading...</div>
+    );
+  }
+
+  if (!campaign) {
+    return (
+      <div className="flex flex-col gap-[16px]">
+        <Link href="/campaigns" className="flex items-center gap-[8px] text-[14px] text-[var(--grey-800)]">
+          <ChevronLeftIcon size={16} /> Back
+        </Link>
+        <p className="text-[var(--neutral-500)]">Campaign not found.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-[24px]">
@@ -37,28 +79,29 @@ export default function CampaignDetailsPage({ params }: { params: { id: string }
 
       {/* Campaign Info Card */}
       <div className="rounded-[16px] border border-[var(--border-01)] p-[24px] flex flex-col gap-[24px]">
-        {/* Top section: info + status + progress */}
+        {/* Top: info + status + progress */}
         <div className="flex gap-[32px]">
-          {/* Left: Title, cause, description */}
           <div className="flex-1 flex flex-col gap-[8px]">
             <div className="flex items-start justify-between">
               <h2 className="text-[20px] font-bold text-[var(--grey-800)] font-urbanist">{campaign.title}</h2>
-              <span className="inline-flex items-center px-[12px] py-[4px] rounded-[8px] border border-[#6bc497] text-[#47b881] text-[14px] font-medium shrink-0 ml-[16px]">
+              <span className={`inline-flex items-center px-[12px] py-[4px] rounded-[8px] border ${statusStyle?.border} ${statusStyle?.text} text-[14px] font-medium shrink-0 ml-[16px] capitalize`}>
                 {campaign.status}
               </span>
             </div>
-            <p className="text-[14px] text-[#667085]">{campaign.cause}</p>
-            <p className="text-[14px] leading-[1.6] text-[var(--grey-800)] mt-[4px]">{campaign.description}</p>
+            <p className="text-[14px] text-[#667085]">{campaign.category}</p>
+            {campaign.description && (
+              <p className="text-[14px] leading-[1.6] text-[var(--grey-800)] mt-[4px]">{campaign.description}</p>
+            )}
           </div>
 
-          {/* Right: Progress */}
+          {/* Progress bar */}
           <div className="w-[280px] shrink-0 flex flex-col gap-[8px] pt-[4px]">
             <div className="flex items-center justify-between text-[14px] font-semibold text-[var(--grey-800)]">
               <span>Progress</span>
-              <span>{campaign.progress}%</span>
+              <span>{progress}%</span>
             </div>
             <div className="w-full h-[8px] bg-[var(--neutral-100)] rounded-full overflow-hidden">
-              <div className="h-full bg-[var(--auxiliary-700)] rounded-full" style={{ width: `${campaign.progress}%` }} />
+              <div className="h-full bg-[var(--auxiliary-700)] rounded-full" style={{ width: `${progress}%` }} />
             </div>
           </div>
         </div>
@@ -66,10 +109,10 @@ export default function CampaignDetailsPage({ params }: { params: { id: string }
         {/* Stats boxes */}
         <div className="grid grid-cols-4 gap-[24px]">
           {[
-            { label: 'Goal', value: campaign.goal },
-            { label: 'Raised', value: campaign.raised },
-            { label: 'Start Date', value: campaign.startDate },
-            { label: 'End Date', value: campaign.endDate },
+            { label: 'Goal', value: `£${campaign.goalAmount.toLocaleString()}` },
+            { label: 'Raised', value: `£${(campaign.raisedAmount ?? 0).toLocaleString()}` },
+            { label: 'Start Date', value: formatDate(campaign.startDate) },
+            { label: 'End Date', value: formatDate(campaign.endDate) },
           ].map((stat) => (
             <div key={stat.label} className="p-[16px] border border-[var(--border-01)] rounded-[12px]">
               <p className="text-[14px] text-[#667085] mb-[8px]">{stat.label}</p>
@@ -80,26 +123,33 @@ export default function CampaignDetailsPage({ params }: { params: { id: string }
 
         {/* Action Buttons */}
         <div className="flex items-center justify-end gap-[16px]">
-          <button className="flex items-center gap-[8px] px-[20px] py-[10px] text-[14px] font-medium text-[var(--grey-800)] bg-white border border-[var(--border-01)] rounded-[8px] hover:bg-[var(--neutral-100)] transition-colors">
-            <EditIcon size={18} />
-            <span>Edit Campaign</span>
-          </button>
-          <button
-            onClick={() => setIsEndModalOpen(true)}
-            className="px-[20px] py-[10px] text-[14px] font-medium text-white bg-[var(--error)] rounded-[8px] hover:bg-red-600 transition-colors"
-          >
-            End Campaign
-          </button>
+          {isEditable && (
+            <Link
+              href={`/campaigns/${id}/edit`}
+              className="flex items-center gap-[8px] px-[20px] py-[10px] text-[14px] font-medium text-[var(--grey-800)] bg-white border border-[var(--border-01)] rounded-[8px] hover:bg-[var(--neutral-100)] transition-colors"
+            >
+              <EditIcon size={18} />
+              <span>Edit Campaign</span>
+            </Link>
+          )}
+          {isEndable && (
+            <button
+              onClick={() => setIsEndModalOpen(true)}
+              className="px-[20px] py-[10px] text-[14px] font-medium text-white bg-[var(--error)] rounded-[8px] hover:bg-red-600 transition-colors"
+            >
+              End Campaign
+            </button>
+          )}
         </div>
       </div>
 
       {/* Donation History */}
-      <DonationHistoryTable />
+      <DonationHistoryTable campaignId={id} />
 
       <EndCampaignModal
         isOpen={isEndModalOpen}
         onClose={() => setIsEndModalOpen(false)}
-        onConfirm={() => console.log('Campaign ended')}
+        onConfirm={handleEndCampaign}
       />
     </div>
   );

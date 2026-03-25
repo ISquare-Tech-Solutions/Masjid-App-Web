@@ -7,6 +7,7 @@ import AddCampaignModal from './components/AddCampaignModal';
 
 export default function CampaignsPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [tableKey, setTableKey] = useState(0);
 
   const stats = [
     {
@@ -71,12 +72,13 @@ export default function CampaignsPage() {
       {/* Table Section */}
       <div className="rounded-[24px] border border-[var(--border-01)] flex flex-col p-[24px] gap-[16px]">
         <h2 className="text-[20px] font-semibold text-[#1F1F1F] font-urbanist">Active Campaigns</h2>
-        <CampaignTable />
+        <CampaignTable key={tableKey} />
       </div>
 
       <AddCampaignModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
+        onCreated={() => setTableKey(k => k + 1)}
       />
     </div>
   );

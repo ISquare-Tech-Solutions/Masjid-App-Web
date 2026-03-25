@@ -2,28 +2,50 @@
 
 import { useState } from 'react';
 import Modal from '@/components/ui/Modal';
-import { CalendarIcon, ChevronDownIcon, CloseIcon } from '@/components/ui/Icons';
+import { ChevronDownIcon, CloseIcon } from '@/components/ui/Icons';
 import Input from '@/components/ui/Input';
+import { createCampaign } from '@/lib/api/campaigns';
 
 interface AddCampaignModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onCreated?: () => void;
 }
 
-export default function AddCampaignModal({ isOpen, onClose }: AddCampaignModalProps) {
+export default function AddCampaignModal({ isOpen, onClose, onCreated }: AddCampaignModalProps) {
   const [formData, setFormData] = useState({
     title: '',
-    cause: 'General',
-    targetAmount: '',
-    dateRange: '',
+    category: 'General',
+    goalAmount: '',
+    startDate: '',
+    endDate: '',
     description: '',
   });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent, isDraft: boolean) => {
+  const handleSubmit = async (e: React.FormEvent, isDraft: boolean) => {
     e.preventDefault();
-    console.log('Submitting:', formData, 'Draft:', isDraft);
-    // Add logic here
-    onClose();
+    setError(null);
+    setSubmitting(true);
+    try {
+      await createCampaign({
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        goalAmount: Number(formData.goalAmount),
+        startDate: formData.startDate,
+        endDate: formData.endDate || undefined,
+        status: isDraft ? 'draft' : 'active',
+      });
+      onCreated?.();
+      onClose();
+    } catch (err) {
+      setError('Failed to create campaign. Please try again.');
+      console.error(err);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -35,14 +57,15 @@ export default function AddCampaignModal({ isOpen, onClose }: AddCampaignModalPr
         </button>
       </div>
       <form className="p-[24px] flex flex-col gap-[24px]" onSubmit={(e) => handleSubmit(e, false)}>
-        
+
         {/* Title */}
         <div className="flex flex-col gap-[8px]">
           <label className="text-[14px] font-medium text-[var(--grey-800)]">Title</label>
-          <Input 
-            placeholder="Masjid Maintenance Work Tomorrow" 
+          <Input
+            placeholder="Masjid Maintenance Work Tomorrow"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            required
           />
         </div>
 
@@ -51,10 +74,10 @@ export default function AddCampaignModal({ isOpen, onClose }: AddCampaignModalPr
           <div className="flex flex-col gap-[8px] flex-1">
             <label className="text-[14px] font-medium text-[var(--grey-800)]">Cause</label>
             <div className="relative">
-              <select 
+              <select
                 className="w-full h-[48px] px-[16px] bg-white border border-[var(--border-01)] rounded-[8px] text-[14px] text-[var(--grey-800)] appearance-none outline-none focus:border-[var(--brand)] transition-colors"
-                value={formData.cause}
-                onChange={(e) => setFormData({ ...formData, cause: e.target.value })}
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               >
                 <option value="General">General</option>
                 <option value="Masjid Development">Masjid Development</option>
@@ -64,41 +87,52 @@ export default function AddCampaignModal({ isOpen, onClose }: AddCampaignModalPr
               <ChevronDownIcon size={20} className="absolute right-[16px] top-1/2 -translate-y-1/2 text-[var(--neutral-500)] pointer-events-none" />
             </div>
           </div>
-          
+
           <div className="flex flex-col gap-[8px] flex-1">
             <label className="text-[14px] font-medium text-[var(--grey-800)]">Target Amount</label>
             <div className="relative">
               <span className="absolute left-[16px] top-1/2 -translate-y-1/2 text-[var(--grey-800)] font-medium">£</span>
-              <input 
+              <input
                 type="number"
                 placeholder="0"
+                min="1"
+                required
                 className="w-full h-[48px] pl-[32px] pr-[16px] bg-white border border-[var(--border-01)] rounded-[8px] text-[14px] text-[var(--grey-800)] outline-none focus:border-[var(--brand)] transition-colors"
-                value={formData.targetAmount}
-                onChange={(e) => setFormData({ ...formData, targetAmount: e.target.value })}
+                value={formData.goalAmount}
+                onChange={(e) => setFormData({ ...formData, goalAmount: e.target.value })}
               />
             </div>
           </div>
         </div>
 
-        {/* Date Range */}
-        <div className="flex flex-col gap-[8px]">
-          <label className="text-[14px] font-medium text-[var(--grey-800)]">Start & End Date</label>
-          <div className="relative">
-            <input 
-              type="text"
-              placeholder="17 Oct 2025 - 18 Oct 2025"
-              className="w-full h-[48px] px-[16px] bg-white border border-[var(--border-01)] rounded-[8px] text-[14px] text-[var(--grey-800)] outline-none focus:border-[var(--brand)] transition-colors cursor-pointer"
-              value={formData.dateRange}
-              onChange={(e) => setFormData({ ...formData, dateRange: e.target.value })}
+        {/* Start & End Date */}
+        <div className="flex items-center gap-[24px]">
+          <div className="flex flex-col gap-[8px] flex-1">
+            <label className="text-[14px] font-medium text-[var(--grey-800)]">Start Date</label>
+            <input
+              type="date"
+              required
+              className="w-full h-[48px] px-[16px] bg-white border border-[var(--border-01)] rounded-[8px] text-[14px] text-[var(--grey-800)] outline-none focus:border-[var(--brand)] transition-colors"
+              value={formData.startDate}
+              onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
             />
-            <CalendarIcon size={20} className="absolute right-[16px] top-1/2 -translate-y-1/2 text-[var(--neutral-500)] pointer-events-none" />
+          </div>
+          <div className="flex flex-col gap-[8px] flex-1">
+            <label className="text-[14px] font-medium text-[var(--grey-800)]">End Date <span className="text-[var(--neutral-400)] font-normal">(optional)</span></label>
+            <input
+              type="date"
+              className="w-full h-[48px] px-[16px] bg-white border border-[var(--border-01)] rounded-[8px] text-[14px] text-[var(--grey-800)] outline-none focus:border-[var(--brand)] transition-colors"
+              value={formData.endDate}
+              min={formData.startDate}
+              onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+            />
           </div>
         </div>
 
         {/* Description */}
         <div className="flex flex-col gap-[8px]">
           <label className="text-[14px] font-medium text-[var(--grey-800)]">Description</label>
-          <textarea 
+          <textarea
             placeholder="Support the construction of a new Wudu area to make the masjid more accessible and comfortable for all community members."
             className="w-full h-[120px] p-[16px] bg-white border border-[var(--border-01)] rounded-[8px] text-[14px] text-[var(--grey-800)] outline-none focus:border-[var(--brand)] transition-colors resize-none placeholder:text-[var(--neutral-400)]"
             value={formData.description}
@@ -106,32 +140,32 @@ export default function AddCampaignModal({ isOpen, onClose }: AddCampaignModalPr
           />
         </div>
 
-        {/* Footer Note */}
-        <p className="text-[12px] text-[var(--neutral-500)] italic mt-2">
-          *When you create campaign it goes live in the Mobile App*
-        </p>
+        {error && <p className="text-[13px] text-[#f64c4c]">{error}</p>}
 
         {/* Action Buttons */}
         <div className="flex items-center justify-end gap-[16px] mt-2 pt-2 border-t border-[var(--border-01)]">
-          <button 
+          <button
             type="button"
             onClick={onClose}
-            className="px-[20px] py-[10px] text-[14px] font-medium text-[var(--grey-800)] bg-white border border-[var(--border-01)] rounded-[8px] hover:bg-[var(--neutral-50)] transition-colors"
+            disabled={submitting}
+            className="px-[20px] py-[10px] text-[14px] font-medium text-[var(--grey-800)] bg-white border border-[var(--border-01)] rounded-[8px] hover:bg-[var(--neutral-50)] transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
-          <button 
+          <button
             type="button"
+            disabled={submitting}
             onClick={(e) => handleSubmit(e, true)}
-            className="px-[20px] py-[10px] text-[14px] font-medium text-[var(--grey-800)] bg-white border border-[var(--border-01)] rounded-[8px] hover:bg-[var(--neutral-50)] transition-colors"
+            className="px-[20px] py-[10px] text-[14px] font-medium text-[var(--grey-800)] bg-white border border-[var(--border-01)] rounded-[8px] hover:bg-[var(--neutral-50)] transition-colors disabled:opacity-50"
           >
             Save as Draft
           </button>
-          <button 
+          <button
             type="submit"
-            className="px-[20px] py-[10px] text-[14px] font-medium text-white bg-[var(--brand)] rounded-[8px] hover:bg-[#046c4e] transition-colors"
+            disabled={submitting}
+            className="px-[20px] py-[10px] text-[14px] font-medium text-white bg-[var(--brand)] rounded-[8px] hover:bg-[#046c4e] transition-colors disabled:opacity-50"
           >
-            Create Campaign
+            {submitting ? 'Creating...' : 'Create Campaign'}
           </button>
         </div>
 
