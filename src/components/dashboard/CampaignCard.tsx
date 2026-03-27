@@ -8,7 +8,7 @@ interface CampaignCardProps {
 }
 
 export default function CampaignCard({ campaign }: CampaignCardProps) {
-  const progress = Math.min((campaign.raised / campaign.goal) * 100, 100);
+  const progress = Math.min((campaign.raisedAmount / campaign.goalAmount) * 100, 100);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-GB', {
@@ -56,11 +56,11 @@ export default function CampaignCard({ campaign }: CampaignCardProps) {
         <div className="flex gap-[8px] text-[16px] text-[var(--grey-800)]">
           <div className="flex-1 flex flex-col gap-[8px]">
             <p className="font-inter font-medium leading-normal">Goal</p>
-            <p className="font-inter font-semibold leading-normal">{formatCurrency(campaign.goal)}</p>
+            <p className="font-inter font-semibold leading-normal">{formatCurrency(campaign.goalAmount)}</p>
           </div>
           <div className="flex-1 flex flex-col gap-[8px]">
             <p className="font-inter font-medium leading-normal">Raised</p>
-            <p className="font-inter font-semibold leading-normal">{formatCurrency(campaign.raised)}</p>
+            <p className="font-inter font-semibold leading-normal">{formatCurrency(campaign.raisedAmount)}</p>
           </div>
           <div className="flex-1 flex flex-col gap-[8px]">
             <p className="font-inter font-medium leading-normal">End Date</p>

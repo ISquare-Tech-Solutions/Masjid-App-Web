@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { UploadIcon } from '@/components/ui/Icons';
 import { getSettings, updateSettings, updatePaymentSettings, connectStripe, disconnectStripe, getStripeStatus } from '@/lib/api/settings';
@@ -131,7 +131,7 @@ const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 
   );
 };
 
-export default function SettingsPage() {
+function SettingsPageContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'masjid' | 'bank'>('masjid');
   const [loading, setLoading] = useState(true);
@@ -664,5 +664,13 @@ export default function SettingsPage() {
         )
       )}
     </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<div />}>
+      <SettingsPageContent />
+    </Suspense>
   );
 }
