@@ -52,11 +52,40 @@ export interface Announcement {
 export interface Campaign {
   id: string;
   title: string;
+  description?: string;
   category: string;
-  goal: number;
-  raised: number;
-  endDate: string;
-  status: 'active' | 'completed' | 'cancelled';
+  goalAmount: number;
+  raisedAmount: number;
+  donorCount?: number;
+  startDate: string;
+  endDate?: string;
+  status: 'draft' | 'active' | 'paused' | 'completed' | 'cancelled';
+  createdBy?: { id: string; name: string; email: string };
+  createdAt?: string;
+  updatedAt?: string;
+  publishedAt?: string;
+  endedAt?: string;
+}
+
+// Donation Types
+export interface Donation {
+  id: string;
+  campaignId: string;
+  campaignTitle?: string;
+  donorName?: string;
+  donorEmail?: string;
+  isAnonymous: boolean;
+  coverFee: boolean;
+  amount: number;
+  processingFee?: number;
+  totalCharged?: number;
+  currency?: string;
+  paymentMethod?: string;
+  status: 'pending' | 'completed' | 'failed' | 'refunded';
+  receiptSent?: boolean;
+  receiptSentAt?: string;
+  createdAt?: string;
+  completedAt?: string;
 }
 
 // Navigation Types
