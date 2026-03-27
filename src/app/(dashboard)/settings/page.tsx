@@ -230,25 +230,21 @@ export default function SettingsPage() {
   // Detect Stripe redirect back after onboarding
   useEffect(() => {
     const stripeParam = searchParams.get('stripe');
-    if (stripeParam === 'success') {
+    if (stripeParam === 'connected') {
       setActiveTab('bank');
       setToast({ message: 'Stripe connected! Syncing account status...', type: 'success' });
-      // Call status endpoint directly to get fresh data from Stripe
       getStripeStatus().then(setStripeStatus).catch(() => fetchSettings());
-    } else if (stripeParam === 'refresh') {
+    } else if (stripeParam === 'cancelled') {
       setActiveTab('bank');
-      setToast({ message: 'Stripe onboarding expired. Please reconnect.', type: 'error' });
+      setToast({ message: 'Stripe connection cancelled.', type: 'error' });
     }
   }, [searchParams, fetchSettings]);
 
   const handleConnectStripe = async () => {
     try {
       setConnectingStripe(true);
-      const origin = window.location.origin;
-      const returnUrl = `${origin}/settings?stripe=success`;
-      const refreshUrl = `${origin}/settings?stripe=refresh`;
-      const onboardingUrl = await connectStripe(returnUrl, refreshUrl);
-      window.location.href = onboardingUrl;
+      const oauthUrl = await connectStripe();
+      window.location.href = oauthUrl;
     } catch (err) {
       console.error('Failed to connect Stripe:', err);
       setToast({ message: 'Failed to start Stripe onboarding. Check configuration.', type: 'error' });
@@ -627,14 +623,15 @@ export default function SettingsPage() {
                     </div>
                     {/* Actions */}
                     <div className="flex gap-[12px]">
-                      {!stripeStatus.onboardingComplete && (
-                        <button
-                          onClick={handleConnectStripe}
-                          disabled={connectingStripe}
-                          className="h-[40px] px-[20px] bg-[var(--brand)] text-white rounded-[10px] font-urbanist font-medium text-[14px] hover:bg-[#065d29] transition-colors disabled:opacity-50"
+                      {!stripeStatus.onboardingComplete && stripeStatus.connected && (
+                        <a
+                          href="https://dashboard.stripe.com/settings/account"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="h-[40px] px-[20px] bg-[var(--brand)] text-white rounded-[10px] font-urbanist font-medium text-[14px] hover:bg-[#065d29] transition-colors flex items-center"
                         >
-                          {connectingStripe ? 'Redirecting...' : 'Complete Setup'}
-                        </button>
+                          Complete Setup on Stripe
+                        </a>
                       )}
                       <button
                         onClick={handleDisconnectStripe}

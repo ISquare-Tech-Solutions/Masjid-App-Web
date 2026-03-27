@@ -22,11 +22,9 @@ export async function updatePaymentSettings(data: UpdatePaymentSettingsRequest):
     return response.data;
 }
 
-export async function connectStripe(returnUrl: string, refreshUrl: string): Promise<string> {
-    const response = await post<ApiResponse<{ onboardingUrl: string }>>(
-        `/admin/settings/stripe/connect?returnUrl=${encodeURIComponent(returnUrl)}&refreshUrl=${encodeURIComponent(refreshUrl)}`
-    );
-    return response.data.onboardingUrl;
+export async function connectStripe(): Promise<string> {
+    const response = await get<ApiResponse<{ oauthUrl: string }>>('/admin/settings/stripe/connect');
+    return response.data.oauthUrl;
 }
 
 export async function getStripeStatus(): Promise<StripeStatus> {
