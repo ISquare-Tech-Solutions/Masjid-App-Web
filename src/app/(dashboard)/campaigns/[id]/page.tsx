@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { ChevronLeftIcon, EditIcon, DownloadIcon } from '@/components/ui/Icons';
 import DonationHistoryTable from './components/DonationHistoryTable';
 import EndCampaignModal from './components/EndCampaignModal';
+import PublishCampaignModal from '../components/PublishCampaignModal';
 import Link from 'next/link';
 import { getCampaignById, updateCampaignStatus } from '@/lib/api/campaigns';
 import { downloadDonorPdf } from '@/lib/downloadDonorPdf';
@@ -23,6 +24,7 @@ export default function CampaignDetailsPage({ params }: { params: Promise<{ id: 
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEndModalOpen, setIsEndModalOpen] = useState(false);
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
 
   useEffect(() => {
     getCampaignById(id)
@@ -45,6 +47,7 @@ export default function CampaignDetailsPage({ params }: { params: Promise<{ id: 
 
   const statusStyle = campaign ? (STATUS_COLORS[campaign.status] ?? { border: 'border-[#e2e8f0]', text: 'text-[#667085]' }) : null;
   const isEditable = campaign && (campaign.status === 'draft' || campaign.status === 'active' || campaign.status === 'paused');
+  const isPublishable = campaign && campaign.status === 'draft';
   const isEndable = campaign && (campaign.status === 'active' || campaign.status === 'paused');
   const isDownloadable = campaign && (campaign.status === 'completed' || campaign.status === 'cancelled');
 
@@ -134,6 +137,15 @@ export default function CampaignDetailsPage({ params }: { params: Promise<{ id: 
               <span>Edit Campaign</span>
             </Link>
           )}
+          {isPublishable && (
+            <button
+              onClick={() => setIsPublishModalOpen(true)}
+              className="h-[44px] px-[24px] bg-[#077734] rounded-[12px] text-[16px] font-semibold text-white hover:bg-[#046c4e] transition-colors"
+              style={{ fontFamily: 'Inter, sans-serif' }}
+            >
+              Publish Campaign
+            </button>
+          )}
           {isEndable && (
             <button
               onClick={() => setIsEndModalOpen(true)}
@@ -162,6 +174,16 @@ export default function CampaignDetailsPage({ params }: { params: Promise<{ id: 
         isOpen={isEndModalOpen}
         onClose={() => setIsEndModalOpen(false)}
         onConfirm={handleEndCampaign}
+      />
+
+      <PublishCampaignModal
+        isOpen={isPublishModalOpen}
+        campaignTitle={campaign.title}
+        onClose={() => setIsPublishModalOpen(false)}
+        onConfirm={async () => {
+          await updateCampaignStatus(id, 'active');
+          setCampaign(prev => prev ? { ...prev, status: 'active' } : prev);
+        }}
       />
     </div>
   );
