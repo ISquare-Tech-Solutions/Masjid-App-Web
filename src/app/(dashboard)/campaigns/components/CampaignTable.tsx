@@ -1,30 +1,42 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { EyeIcon, EditIcon, StopCircleIcon, TrashIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from '@/components/ui/Icons';
+import { EyeIcon, EditIcon, TrashIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon, SendIcon, DownloadIcon } from '@/components/ui/Icons';
 import Link from 'next/link';
 import type { Campaign } from '@/types';
-import { getCampaigns, updateCampaignStatus } from '@/lib/api/campaigns';
+import { getCampaigns, updateCampaignStatus, deleteCampaign } from '@/lib/api/campaigns';
+import { downloadDonorPdf } from '@/lib/downloadDonorPdf';
+import DeleteCampaignModal from './DeleteCampaignModal';
+import PublishCampaignModal from './PublishCampaignModal';
 
-type TabStatus = 'All' | 'active' | 'paused' | 'completed' | 'draft';
+type TabStatus = 'All' | 'active' | 'draft' | 'completed' | 'cancelled';
+
+const TAB_LABELS: Record<TabStatus, string> = {
+  All: 'All',
+  draft: 'Draft',
+  active: 'Active',
+  completed: 'Completed',
+  cancelled: 'Ended',
+};
+
+const STATUS_STYLES: Record<string, { border: string; text: string }> = {
+  active:    { border: 'border-[#4ba1ff]', text: 'text-[#3b82f6]' },
+  paused:    { border: 'border-[#ffc62b]', text: 'text-[#ffad0d]' },
+  completed: { border: 'border-[#6bc497]', text: 'text-[#47b881]' },
+  draft:     { border: 'border-[#ffc62b]', text: 'text-[#ffad0d]' },
+  cancelled: { border: 'border-[#eb6f70]', text: 'text-[#f64c4c]' },
+};
 
 const STATUS_LABEL: Record<string, string> = {
   active: 'Active',
   paused: 'Paused',
   completed: 'Completed',
   draft: 'Draft',
-  cancelled: 'Cancelled',
+  cancelled: 'Ended',
 };
 
 const StatusPill = ({ status }: { status: Campaign['status'] }) => {
-  const styles: Record<string, { border: string; text: string }> = {
-    active:    { border: 'border-[#6bc497]', text: 'text-[#47b881]' },
-    paused:    { border: 'border-[#ffc62b]', text: 'text-[#ffad0d]' },
-    completed: { border: 'border-[#eb6f70]', text: 'text-[#f64c4c]' },
-    draft:     { border: 'border-[#ffc62b]', text: 'text-[#ffad0d]' },
-    cancelled: { border: 'border-[#eb6f70]', text: 'text-[#f64c4c]' },
-  };
-  const { border, text } = styles[status] ?? { border: 'border-[#e2e8f0]', text: 'text-[#667085]' };
+  const { border, text } = STATUS_STYLES[status] ?? { border: 'border-[#e2e8f0]', text: 'text-[#667085]' };
   return (
     <span className={`inline-flex items-center justify-center px-[8px] py-[4px] rounded-[8px] border ${border} ${text} text-[12px] font-normal capitalize`}
       style={{ fontFamily: "'Inter Tight', sans-serif" }}>
@@ -33,34 +45,76 @@ const StatusPill = ({ status }: { status: Campaign['status'] }) => {
   );
 };
 
-const RowActions = ({ campaign, onStatusChange }: { campaign: Campaign; onStatusChange: () => void }) => {
-  const handleEnd = async () => {
-    await updateCampaignStatus(campaign.id, 'completed');
-    onStatusChange();
-  };
+const GoalProgress = ({ raised, goal }: { raised: number; goal: number }) => {
+  const pct = goal > 0 ? Math.min((raised / goal) * 100, 100) : 0;
+  const fmt = (n: number) => `£${n.toLocaleString()}`;
+  return (
+    <div className="flex flex-col gap-[4px] w-full">
+      <div className="flex items-center justify-between text-[12px] font-medium whitespace-nowrap" style={{ fontFamily: 'Inter, sans-serif' }}>
+        <span className="text-[var(--brand)]">{fmt(raised)}</span>
+        <span className="text-[#666d80]">Goal: {fmt(goal)}</span>
+      </div>
+      <div className="w-full h-[8px] bg-[#f6f6f6] rounded-[1234px] overflow-hidden">
+        <div className="h-full bg-[var(--brand)] rounded-[1234px]" style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-[10px] text-[#666d80] font-medium" style={{ fontFamily: 'Inter, sans-serif' }}>
+        {pct.toFixed(1)}% funded
+      </span>
+    </div>
+  );
+};
 
+const Duration = ({ startDate, endDate }: { startDate?: string; endDate?: string }) => {
+  const fmt = (d?: string) =>
+    d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+  return (
+    <div className="flex flex-col gap-[2px]">
+      <span className="text-[14px] text-[#36394a] font-medium" style={{ fontFamily: 'Inter, sans-serif' }}>{fmt(startDate)}</span>
+      {endDate && (
+        <span className="text-[10px] text-[#666d80] font-medium" style={{ fontFamily: 'Inter, sans-serif' }}>to {fmt(endDate)}</span>
+      )}
+    </div>
+  );
+};
+
+const RowActions = ({
+  campaign,
+  onStatusChange,
+  onDeleteClick,
+  onPublishClick,
+}: {
+  campaign: Campaign;
+  onStatusChange: () => void;
+  onDeleteClick: (campaign: Campaign) => void;
+  onPublishClick: (campaign: Campaign) => void;
+}) => {
   switch (campaign.status) {
     case 'active':
     case 'paused':
       return (
-        <div className="flex items-center gap-[12px]">
+        <div className="flex items-center gap-[10px]">
           <Link href={`/campaigns/${campaign.id}`} className="text-[#667085] hover:text-[var(--brand)] transition-colors"><EyeIcon size={20} /></Link>
           <Link href={`/campaigns/${campaign.id}/edit`} className="text-[#667085] hover:text-[var(--brand)] transition-colors"><EditIcon size={20} /></Link>
-          <button onClick={handleEnd} className="text-[#eb6f70] hover:opacity-80 transition-opacity"><StopCircleIcon size={20} /></button>
+          <span className="relative flex items-center justify-center w-[20px] h-[20px]" title="Live">
+            <span className="animate-ping absolute inline-flex h-[10px] w-[10px] rounded-full bg-[#eb6f70] opacity-75" />
+            <span className="relative inline-flex h-[8px] w-[8px] rounded-full bg-[#f64c4c]" />
+          </span>
         </div>
       );
     case 'completed':
     case 'cancelled':
       return (
-        <div className="flex items-center gap-[12px]">
+        <div className="flex items-center gap-[10px]">
           <Link href={`/campaigns/${campaign.id}`} className="text-[#667085] hover:text-[var(--brand)] transition-colors"><EyeIcon size={20} /></Link>
+          <button onClick={() => downloadDonorPdf(campaign)} title="Download Donor Report" className="text-[#667085] hover:text-[var(--brand)] transition-colors"><DownloadIcon size={20} /></button>
         </div>
       );
     case 'draft':
       return (
-        <div className="flex items-center gap-[12px]">
+        <div className="flex items-center gap-[10px]">
+          <button onClick={() => onPublishClick(campaign)} title="Publish" className="text-[var(--brand)] hover:opacity-80 transition-opacity"><SendIcon size={18} /></button>
           <Link href={`/campaigns/${campaign.id}/edit`} className="text-[#667085] hover:text-[var(--brand)] transition-colors"><EditIcon size={20} /></Link>
-          <button onClick={handleEnd} className="text-[#eb6f70] hover:opacity-80 transition-opacity"><TrashIcon size={20} /></button>
+          <button onClick={() => onDeleteClick(campaign)} className="text-[#eb6f70] hover:opacity-80 transition-opacity"><TrashIcon size={20} /></button>
         </div>
       );
     default:
@@ -76,9 +130,11 @@ export default function CampaignTable() {
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<Campaign | null>(null);
+  const [publishTarget, setPublishTarget] = useState<Campaign | null>(null);
   const pageSize = 5;
 
-  const tabs: TabStatus[] = ['All', 'active', 'paused', 'completed', 'draft'];
+  const tabs: TabStatus[] = ['All', 'draft', 'active', 'completed', 'cancelled'];
 
   const fetchCampaigns = async (page = 0) => {
     setLoading(true);
@@ -102,13 +158,9 @@ export default function CampaignTable() {
   const filteredCampaigns = campaigns.filter(c => {
     const matchesTab = activeTab === 'All' || c.status === activeTab;
     const matchesSearch = c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          c.category.toLowerCase().includes(searchQuery.toLowerCase());
+                          (c.category ?? '').toLowerCase().includes(searchQuery.toLowerCase());
     return matchesTab && matchesSearch;
   });
-
-  const formatCurrency = (amount: number) => `£${amount.toLocaleString()}`;
-  const calcProgress = (raised: number, goal: number) =>
-    goal > 0 ? `${Math.round((raised / goal) * 100)}%` : '0%';
 
   return (
     <div className="flex flex-col">
@@ -124,13 +176,15 @@ export default function CampaignTable() {
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`flex items-center justify-center gap-[8px] px-[16px] py-[10px] text-[14px] transition-colors
-                  ${isFirst ? 'rounded-tl-[8px] rounded-bl-[8px] border border-[var(--border-01)]' : 'border-t border-b border-r border-[var(--border-01)]'}
+                  ${isFirst ? 'rounded-tl-[8px] rounded-bl-[8px]' : ''}
                   ${isLast ? 'rounded-tr-[8px] rounded-br-[8px]' : ''}
-                  ${isActive ? 'bg-[#fafbfb] font-bold text-[#1f1f1f] font-urbanist' : 'bg-white font-normal text-[#667085] font-urbanist hover:bg-[#fafbfb]'}
+                  ${isFirst ? 'border border-[var(--border-01)]' : 'border-t border-b border-r border-[var(--border-01)]'}
+                  ${isActive
+                    ? 'bg-[var(--brand)] text-white font-bold font-urbanist'
+                    : 'bg-white font-normal text-[#36394a] font-urbanist hover:bg-[#fafbfb]'}
                 `}
               >
-                {tab === 'All' && isActive && <div className="w-[10px] h-[10px] rounded-full bg-[#1F1F1F]" />}
-                {tab === 'All' ? 'All' : STATUS_LABEL[tab]}
+                {TAB_LABELS[tab]}
               </button>
             );
           })}
@@ -153,39 +207,35 @@ export default function CampaignTable() {
       <table className="w-full text-left">
         <thead>
           <tr className="bg-[#fafbfb] border-y border-[var(--border-01)] h-[48px]">
-            <th className="pl-[16px] w-[52px]">
-              <div className="w-[20px] h-[20px] border border-[#e6e6e6] rounded-[4px] bg-white" />
-            </th>
-            <th className="px-[12px] text-[12px] font-medium text-[#667085] uppercase font-urbanist">Title</th>
-            <th className="px-[12px] text-[12px] font-medium text-[#667085] uppercase font-urbanist">Cause</th>
-            <th className="px-[12px] text-[12px] font-medium text-[#667085] uppercase font-urbanist w-[90px]">Target</th>
-            <th className="px-[12px] text-[12px] font-medium text-[#667085] uppercase font-urbanist w-[90px]">Collected</th>
-            <th className="px-[12px] text-[12px] font-medium text-[#667085] uppercase font-urbanist w-[80px]">Progress</th>
-            <th className="px-[12px] text-[12px] font-medium text-[#667085] uppercase font-urbanist w-[90px]">Status</th>
-            <th className="px-[12px] text-[12px] font-medium text-[#667085] uppercase font-urbanist w-[110px]">End Date</th>
-            <th className="px-[12px] text-[12px] font-medium text-[#667085] uppercase font-urbanist w-[100px]">Action</th>
+            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-urbanist">Campaign Name</th>
+            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-urbanist">Cause</th>
+            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-urbanist">Goal &amp; Progress</th>
+            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-urbanist w-[160px]">Duration</th>
+            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-urbanist w-[140px]">Status</th>
+            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-urbanist w-[140px]">Action</th>
           </tr>
         </thead>
         <tbody>
           {loading ? (
-            <tr><td colSpan={9} className="px-[24px] py-[32px] text-center text-[var(--neutral-500)]">Loading...</td></tr>
+            <tr><td colSpan={6} className="px-[24px] py-[32px] text-center text-[var(--neutral-500)]">Loading...</td></tr>
           ) : filteredCampaigns.length === 0 ? (
-            <tr><td colSpan={9} className="px-[24px] py-[32px] text-center text-[var(--neutral-500)]">No campaigns found.</td></tr>
+            <tr><td colSpan={6} className="px-[24px] py-[32px] text-center text-[var(--neutral-500)]">No campaigns found.</td></tr>
           ) : filteredCampaigns.map((campaign, index) => (
-            <tr key={campaign.id} className={`h-[72px] hover:bg-[#f0f4f8] transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-[#fafbfb]'}`}>
-              <td className="pl-[16px]">
-                <div className="w-[20px] h-[20px] border border-[#e6e6e6] rounded-[4px] bg-white" />
+            <tr key={campaign.id} className={`h-[71px] hover:bg-[#f0f4f8] transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-[#fafbfb]'}`}>
+              <td className="px-[16px] text-[14px] text-[#666d80] font-medium font-urbanist">
+                <span className="line-clamp-2">{campaign.title}</span>
               </td>
-              <td className="px-[12px] text-[14px] text-[#667085] font-medium font-urbanist"><span className="line-clamp-2">{campaign.title}</span></td>
-              <td className="px-[12px] text-[14px] text-[#667085] font-medium font-urbanist"><span className="line-clamp-2">{campaign.category}</span></td>
-              <td className="px-[12px] text-[14px] text-[#36394A] font-bold font-urbanist">{formatCurrency(campaign.goalAmount)}</td>
-              <td className="px-[12px] text-[14px] text-[#36394A] font-bold font-urbanist">{formatCurrency(campaign.raisedAmount ?? 0)}</td>
-              <td className="px-[12px] text-[14px] text-[#36394A] font-medium font-urbanist">{calcProgress(campaign.raisedAmount ?? 0, campaign.goalAmount)}</td>
-              <td className="px-[12px]"><StatusPill status={campaign.status} /></td>
-              <td className="px-[12px] text-[14px] text-[#667085] font-medium font-urbanist whitespace-nowrap">
-                {campaign.endDate ? new Date(campaign.endDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
+              <td className="px-[16px] text-[14px] text-[#666d80] font-medium font-urbanist">
+                <span className="line-clamp-2">{campaign.category}</span>
               </td>
-              <td className="px-[12px]"><RowActions campaign={campaign} onStatusChange={() => fetchCampaigns(currentPage)} /></td>
+              <td className="px-[16px] py-[14px]">
+                <GoalProgress raised={campaign.raisedAmount ?? 0} goal={campaign.goalAmount} />
+              </td>
+              <td className="px-[16px] py-[14px]">
+                <Duration startDate={campaign.startDate} endDate={campaign.endDate} />
+              </td>
+              <td className="px-[16px]"><StatusPill status={campaign.status} /></td>
+              <td className="px-[16px]"><RowActions campaign={campaign} onStatusChange={() => fetchCampaigns(currentPage)} onDeleteClick={setDeleteTarget} onPublishClick={setPublishTarget} /></td>
             </tr>
           ))}
         </tbody>
@@ -214,6 +264,32 @@ export default function CampaignTable() {
           ><ChevronRightIcon size={16} /></button>
         </div>
       </div>
+
+      <DeleteCampaignModal
+        isOpen={deleteTarget !== null}
+        campaignTitle={deleteTarget?.title ?? ''}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={async () => {
+          if (deleteTarget) {
+            await deleteCampaign(deleteTarget.id);
+            await fetchCampaigns(currentPage);
+          }
+        }}
+      />
+
+      <PublishCampaignModal
+        isOpen={publishTarget !== null}
+        campaignTitle={publishTarget?.title ?? ''}
+        onClose={() => setPublishTarget(null)}
+        onConfirm={async () => {
+          if (publishTarget) {
+            await updateCampaignStatus(publishTarget.id, 'active');
+            await fetchCampaigns(currentPage);
+          }
+        }}
+      />
+
+
     </div>
   );
 }

@@ -1,18 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ChevronLeftIcon, EditIcon } from '@/components/ui/Icons';
+import { ChevronLeftIcon, EditIcon, DownloadIcon } from '@/components/ui/Icons';
 import DonationHistoryTable from './components/DonationHistoryTable';
 import EndCampaignModal from './components/EndCampaignModal';
 import Link from 'next/link';
 import { getCampaignById, updateCampaignStatus } from '@/lib/api/campaigns';
+import { downloadDonorPdf } from '@/lib/downloadDonorPdf';
 import type { Campaign } from '@/types';
 import { use } from 'react';
 
 const STATUS_COLORS: Record<string, { border: string; text: string }> = {
-  active:    { border: 'border-[#6bc497]', text: 'text-[#47b881]' },
+  active:    { border: 'border-[#4ba1ff]', text: 'text-[#3b82f6]' },
   paused:    { border: 'border-[#ffc62b]', text: 'text-[#ffad0d]' },
-  completed: { border: 'border-[#eb6f70]', text: 'text-[#f64c4c]' },
+  completed: { border: 'border-[#6bc497]', text: 'text-[#47b881]' },
   draft:     { border: 'border-[#ffc62b]', text: 'text-[#ffad0d]' },
   cancelled: { border: 'border-[#eb6f70]', text: 'text-[#f64c4c]' },
 };
@@ -45,6 +46,7 @@ export default function CampaignDetailsPage({ params }: { params: Promise<{ id: 
   const statusStyle = campaign ? (STATUS_COLORS[campaign.status] ?? { border: 'border-[#e2e8f0]', text: 'text-[#667085]' }) : null;
   const isEditable = campaign && (campaign.status === 'draft' || campaign.status === 'active' || campaign.status === 'paused');
   const isEndable = campaign && (campaign.status === 'active' || campaign.status === 'paused');
+  const isDownloadable = campaign && (campaign.status === 'completed' || campaign.status === 'cancelled');
 
   if (loading) {
     return (
@@ -138,6 +140,16 @@ export default function CampaignDetailsPage({ params }: { params: Promise<{ id: 
               className="px-[20px] py-[10px] text-[14px] font-medium text-white bg-[var(--error)] rounded-[8px] hover:bg-red-600 transition-colors"
             >
               End Campaign
+            </button>
+          )}
+          {isDownloadable && (
+            <button
+              onClick={() => downloadDonorPdf(campaign)}
+              className="flex items-center gap-[8px] h-[44px] px-[24px] bg-[#077734] rounded-[12px] text-[16px] font-semibold text-white hover:bg-[#046c4e] transition-colors"
+              style={{ fontFamily: 'Inter, sans-serif' }}
+            >
+              <DownloadIcon size={20} />
+              <span>Download Report</span>
             </button>
           )}
         </div>

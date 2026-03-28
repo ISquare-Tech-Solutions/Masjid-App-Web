@@ -1,4 +1,4 @@
-import { get, post, put } from './client';
+import { get, post, put, patch, del } from './client';
 import type { Campaign, Donation } from '@/types';
 import type { ApiResponse } from '@/types/api';
 import type { PaginatedResponse } from './events';
@@ -66,7 +66,23 @@ export async function updateCampaign(id: string, data: UpdateCampaignData): Prom
 }
 
 export async function updateCampaignStatus(id: string, status: Campaign['status']): Promise<Campaign> {
-    const response = await put<ApiResponse<Campaign>>(`/admin/campaigns/${id}/update-status`, { status });
+    const response = await patch<ApiResponse<Campaign>>(`/admin/campaigns/${id}/status`, { status });
+    return response.data;
+}
+
+export async function deleteCampaign(id: string): Promise<void> {
+    await del<ApiResponse<void>>(`/admin/campaigns/${id}`);
+}
+
+export interface CampaignStats {
+    activeCampaigns: number;
+    totalDonors: number;
+    raisedThisMonth: number;
+    totalRaised: number;
+}
+
+export async function getCampaignStats(): Promise<CampaignStats> {
+    const response = await get<ApiResponse<CampaignStats>>('/admin/campaigns/stats');
     return response.data;
 }
 
