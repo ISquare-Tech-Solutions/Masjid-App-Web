@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
     PlusIcon,
     GridViewIcon,
@@ -40,6 +40,13 @@ function formatTime(isoString: string) {
     }
 }
 
+// Time filter options
+type TimeFilterOption = 'ALL' | 'Upcoming' | 'Ongoing' | 'Past';
+type AnnouncementTimeFilterOption = 'ALL' | 'Upcoming' | 'Past';
+
+const EVENT_TIME_OPTIONS: TimeFilterOption[] = ['ALL', 'Upcoming', 'Ongoing', 'Past'];
+const ANNOUNCEMENT_TIME_OPTIONS: AnnouncementTimeFilterOption[] = ['ALL', 'Upcoming', 'Past'];
+
 export default function EventsPage() {
     const [activeTab, setActiveTab] = useState<'events' | 'announcements'>('events');
     const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
@@ -52,6 +59,14 @@ export default function EventsPage() {
     const [eventsPage, setEventsPage] = useState(1);
     const [eventsPagination, setEventsPagination] = useState({ totalPages: 1, totalElements: 0, size: 10 });
     
+    // --- Time Filter State ---
+    const [timeFilter, setTimeFilter] = useState<TimeFilterOption>('ALL');
+    const [timeDropdownOpen, setTimeDropdownOpen] = useState(false);
+    const [announcementTimeFilter, setAnnouncementTimeFilter] = useState<AnnouncementTimeFilterOption>('ALL');
+    const [announcementTimeDropdownOpen, setAnnouncementTimeDropdownOpen] = useState(false);
+    const timeDropdownRef = useRef<HTMLDivElement>(null);
+    const announcementTimeDropdownRef = useRef<HTMLDivElement>(null);
+
     // --- Announcements State ---
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [announcementsLoading, setAnnouncementsLoading] = useState(false);
@@ -67,6 +82,20 @@ export default function EventsPage() {
     const [viewEvent, setViewEvent] = useState<EventType | null>(null);
     const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
 
+    // --- Click outside handler for time dropdowns ---
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (timeDropdownRef.current && !timeDropdownRef.current.contains(event.target as Node)) {
+                setTimeDropdownOpen(false);
+            }
+            if (announcementTimeDropdownRef.current && !announcementTimeDropdownRef.current.contains(event.target as Node)) {
+                setAnnouncementTimeDropdownOpen(false);
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     // --- API Fetching: Events ---
     const fetchEvents = useCallback(async () => {
         setEventsLoading(true);
@@ -79,6 +108,10 @@ export default function EventsPage() {
             if (activeFilter === 'Drafts') statusParam = 'draft';
             if (activeFilter === 'Upcoming') upcomingParam = true;
             if (activeFilter === 'Past') pastParam = true;
+
+            // Apply time filter (overrides status-based upcoming/past if set)
+            if (timeFilter === 'Upcoming') upcomingParam = true;
+            if (timeFilter === 'Past') pastParam = true;
 
             const response = await getEvents({
                 page: eventsPage - 1, // backend is 0-indexed
@@ -111,7 +144,7 @@ export default function EventsPage() {
         } finally {
             setEventsLoading(false);
         }
-    }, [eventsPage, searchQuery, activeFilter]);
+    }, [eventsPage, searchQuery, activeFilter, timeFilter]);
 
     // --- API Fetching: Announcements ---
     const fetchAnnouncements = useCallback(async () => {
@@ -128,12 +161,27 @@ export default function EventsPage() {
                 status: statusParam as any,
             });
 
-             const processedAnnouncements = response.content.map(ann => ({
+             let processedAnnouncements = response.content.map(ann => ({
                 ...ann,
                 // Map Backend DTO field "scheduledAt" to "date" and "time" for UI table
                 date: ann.scheduledAt ? formatDate(ann.scheduledAt) : (ann.createdAt ? formatDate(ann.createdAt) : ''),
                 time: ann.scheduledAt ? formatTime(ann.scheduledAt) : (ann.createdAt ? formatTime(ann.createdAt) : ''),
             }));
+
+            // Client-side time filtering for announcements (backend doesn't support startDate/endDate)
+            if (announcementTimeFilter === 'Upcoming') {
+                const now = new Date();
+                processedAnnouncements = processedAnnouncements.filter(ann => {
+                    const annDate = ann.scheduledAt ? new Date(ann.scheduledAt) : (ann.createdAt ? new Date(ann.createdAt) : null);
+                    return annDate && annDate > now;
+                });
+            } else if (announcementTimeFilter === 'Past') {
+                const now = new Date();
+                processedAnnouncements = processedAnnouncements.filter(ann => {
+                    const annDate = ann.scheduledAt ? new Date(ann.scheduledAt) : (ann.createdAt ? new Date(ann.createdAt) : null);
+                    return annDate && annDate <= now;
+                });
+            }
 
             setAnnouncements(processedAnnouncements);
             setAnnouncementsPagination({
@@ -146,7 +194,7 @@ export default function EventsPage() {
         } finally {
             setAnnouncementsLoading(false);
         }
-    }, [announcementsPage, announcementSearchQuery, announcementFilter]);
+    }, [announcementsPage, announcementSearchQuery, announcementFilter, announcementTimeFilter]);
 
     // --- Fetch Triggers ---
     useEffect(() => {
@@ -318,6 +366,58 @@ export default function EventsPage() {
                                 </div>
 
                                 <div className="flex items-center gap-[7px]">
+                                    {/* Time Filter Dropdown */}
+                                    <div className="relative" ref={timeDropdownRef}>
+                                        <button
+                                            id="events-time-filter-trigger"
+                                            onClick={() => setTimeDropdownOpen(!timeDropdownOpen)}
+                                            className={`flex items-center gap-[8px] bg-white border border-solid px-[12px] py-[8px] rounded-[12px] h-[42px] cursor-pointer transition-all duration-200 hover:shadow-sm ${
+                                                timeFilter !== 'ALL'
+                                                    ? 'border-[rgba(7,119,52,0.5)]'
+                                                    : 'border-[rgba(7,119,52,0.1)]'
+                                            }`}
+                                        >
+                                            <span className="font-inter font-medium text-[12px] leading-[18px] text-[#666d80] whitespace-nowrap">
+                                                Time: {timeFilter === 'ALL' ? 'ALL' : timeFilter.toLowerCase()}
+                                            </span>
+                                            <svg
+                                                width="18" height="18" viewBox="0 0 18 18" fill="none"
+                                                className={`transition-transform duration-200 ${timeDropdownOpen ? 'rotate-180' : ''}`}
+                                            >
+                                                <path d="M14.94 6.71252L10.05 11.6025C9.4725 12.18 8.5275 12.18 7.95 11.6025L3.06 6.71252" stroke="#666d80" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                        </button>
+                                        {/* Dropdown Menu */}
+                                        {timeDropdownOpen && (
+                                            <div
+                                                id="events-time-filter-dropdown"
+                                                className="absolute top-[calc(100%+4px)] left-0 z-50 bg-white border border-[#e2e8f0] rounded-[12px] overflow-hidden shadow-md min-w-[160px] animate-in fade-in duration-150"
+                                            >
+                                                {EVENT_TIME_OPTIONS.map((option, index) => (
+                                                    <button
+                                                        key={option}
+                                                        id={`events-time-option-${option.toLowerCase()}`}
+                                                        onClick={() => {
+                                                            setTimeFilter(option);
+                                                            setTimeDropdownOpen(false);
+                                                            setEventsPage(1);
+                                                        }}
+                                                        className={`w-full text-left px-[12px] py-[8px] font-inter font-normal text-[12px] transition-colors duration-150 ${
+                                                            timeFilter === option
+                                                                ? 'bg-[#077734] text-white'
+                                                                : 'text-[#666d80] hover:bg-[rgba(7,119,52,0.05)]'
+                                                        } ${
+                                                            index === EVENT_TIME_OPTIONS.length - 1 ? 'rounded-b-[12px]' : ''
+                                                        } ${
+                                                            index === 0 ? 'rounded-t-[12px]' : ''
+                                                        }`}
+                                                    >
+                                                        Time: {option}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                     <div className="relative w-[342px] h-[40px]">
                                         <input
                                             type="text"
@@ -488,16 +588,70 @@ export default function EventsPage() {
                             ))}
                         </div>
 
-                        <div className="relative w-[342px] h-[40px]">
-                            <input
-                                type="text"
-                                placeholder="Search announcements"
-                                value={announcementSearchQuery}
-                                onChange={(e) => { setAnnouncementSearchQuery(e.target.value); setAnnouncementsPage(1); }}
-                                className="w-full h-full pl-[38px] pr-[14px] border border-[var(--border-01)] rounded-[11px] font-urbanist text-[12px] text-[#666d80] placeholder-[#666d80] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 focus:border-[var(--brand)] transition-all"
-                            />
-                            <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-[var(--grey-100)]">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <div className="flex items-center gap-[7px]">
+                            {/* Announcement Time Filter Dropdown */}
+                            <div className="relative" ref={announcementTimeDropdownRef}>
+                                <button
+                                    id="announcements-time-filter-trigger"
+                                    onClick={() => setAnnouncementTimeDropdownOpen(!announcementTimeDropdownOpen)}
+                                    className={`flex items-center gap-[8px] bg-white border border-solid px-[12px] py-[8px] rounded-[12px] h-[42px] cursor-pointer transition-all duration-200 hover:shadow-sm ${
+                                        announcementTimeFilter !== 'ALL'
+                                            ? 'border-[rgba(7,119,52,0.5)]'
+                                            : 'border-[rgba(7,119,52,0.1)]'
+                                    }`}
+                                >
+                                    <span className="font-inter font-medium text-[12px] leading-[18px] text-[#666d80] whitespace-nowrap">
+                                        Time: {announcementTimeFilter === 'ALL' ? 'ALL' : announcementTimeFilter.toLowerCase()}
+                                    </span>
+                                    <svg
+                                        width="18" height="18" viewBox="0 0 18 18" fill="none"
+                                        className={`transition-transform duration-200 ${announcementTimeDropdownOpen ? 'rotate-180' : ''}`}
+                                    >
+                                        <path d="M14.94 6.71252L10.05 11.6025C9.4725 12.18 8.5275 12.18 7.95 11.6025L3.06 6.71252" stroke="#666d80" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                </button>
+                                {/* Dropdown Menu */}
+                                {announcementTimeDropdownOpen && (
+                                    <div
+                                        id="announcements-time-filter-dropdown"
+                                        className="absolute top-[calc(100%+4px)] left-0 z-50 bg-white border border-[#e2e8f0] rounded-[12px] overflow-hidden shadow-md min-w-[160px] animate-in fade-in duration-150"
+                                    >
+                                        {ANNOUNCEMENT_TIME_OPTIONS.map((option, index) => (
+                                            <button
+                                                key={option}
+                                                id={`announcements-time-option-${option.toLowerCase()}`}
+                                                onClick={() => {
+                                                    setAnnouncementTimeFilter(option);
+                                                    setAnnouncementTimeDropdownOpen(false);
+                                                    setAnnouncementsPage(1);
+                                                }}
+                                                className={`w-full text-left px-[12px] py-[8px] font-inter font-normal text-[12px] transition-colors duration-150 ${
+                                                    announcementTimeFilter === option
+                                                        ? 'bg-[#077734] text-white'
+                                                        : 'text-[#666d80] hover:bg-[rgba(7,119,52,0.05)]'
+                                                } ${
+                                                    index === ANNOUNCEMENT_TIME_OPTIONS.length - 1 ? 'rounded-b-[12px]' : ''
+                                                } ${
+                                                    index === 0 ? 'rounded-t-[12px]' : ''
+                                                }`}
+                                            >
+                                                Time: {option}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="relative w-[342px] h-[40px]">
+                                <input
+                                    type="text"
+                                    placeholder="Search announcements"
+                                    value={announcementSearchQuery}
+                                    onChange={(e) => { setAnnouncementSearchQuery(e.target.value); setAnnouncementsPage(1); }}
+                                    className="w-full h-full pl-[38px] pr-[14px] border border-[var(--border-01)] rounded-[11px] font-urbanist text-[12px] text-[#666d80] placeholder-[#666d80] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 focus:border-[var(--brand)] transition-all"
+                                />
+                                <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-[var(--grey-100)]">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                </div>
                             </div>
                         </div>
                     </div>
