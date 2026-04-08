@@ -54,7 +54,7 @@ export default function EventsPage() {
     // --- Events State ---
     const [events, setEvents] = useState<EventType[]>([]);
     const [eventsLoading, setEventsLoading] = useState(false);
-    const [activeFilter, setActiveFilter] = useState<'All' | 'Upcoming' | 'Past' | 'Drafts'>('All');
+    const [activeFilter, setActiveFilter] = useState<'All' | 'Published' | 'Draft' | 'Cancelled' | 'Completed'>('All');
     const [searchQuery, setSearchQuery] = useState('');
     const [eventsPage, setEventsPage] = useState(1);
     const [eventsPagination, setEventsPagination] = useState({ totalPages: 1, totalElements: 0, size: 10 });
@@ -105,9 +105,10 @@ export default function EventsPage() {
             let upcomingParam;
             let pastParam;
 
-            if (activeFilter === 'Drafts') statusParam = 'draft';
-            if (activeFilter === 'Upcoming') upcomingParam = true;
-            if (activeFilter === 'Past') pastParam = true;
+            if (activeFilter === 'Draft') statusParam = 'draft';
+            if (activeFilter === 'Published') statusParam = 'published';
+            if (activeFilter === 'Cancelled') statusParam = 'cancelled';
+            if (activeFilter === 'Completed') statusParam = 'completed';
 
             // Apply time filter (overrides status-based upcoming/past if set)
             if (timeFilter === 'Upcoming') upcomingParam = true;
@@ -123,14 +124,27 @@ export default function EventsPage() {
             });
 
             // Process backend data for UI display
-            const processedEvents = response.content.map(evt => ({
-                ...evt,
-                // Assign UI helper fields derived from backend ISO date representations
-                date: evt.date ? formatDate(evt.date) : '',
-                startTime: evt.date ? formatTime(evt.date) : '',
-                // If backend does not provide endTime yet natively, keep it blank or derived.
-                endTime: '',
-            }));
+            const processedEvents = response.content.map(evt => {
+                let timeStatus = 'Upcoming';
+                if (evt.date) {
+                    const eventDate = new Date(evt.date);
+                    const now = new Date();
+                    if (eventDate.toDateString() === now.toDateString()) {
+                        timeStatus = 'Ongoing';
+                    } else if (eventDate < now) {
+                        timeStatus = 'Past';
+                    }
+                }
+                return {
+                    ...evt,
+                    // Assign UI helper fields derived from backend ISO date representations
+                    date: evt.date ? formatDate(evt.date) : '',
+                    startTime: evt.date ? formatTime(evt.date) : '',
+                    // If backend does not provide endTime yet natively, keep it blank or derived.
+                    endTime: '',
+                    timeStatus
+                };
+            });
 
             setEvents(processedEvents);
             setEventsPagination({
@@ -139,8 +153,8 @@ export default function EventsPage() {
                 size: response.pagination.size,
             });
         } catch (error) {
-            console.error('Failed to fetch events:', error);
-            // Optionally set error state here
+            console.warn('Failed to fetch events:', error);
+            setEvents([]);
         } finally {
             setEventsLoading(false);
         }
@@ -190,7 +204,8 @@ export default function EventsPage() {
                 size: response.pagination.size,
             });
         } catch (error) {
-            console.error('Failed to fetch announcements:', error);
+            console.warn('Failed to fetch announcements:', error);
+            setAnnouncements([]);
         } finally {
             setAnnouncementsLoading(false);
         }
@@ -284,6 +299,45 @@ export default function EventsPage() {
     const announcementsRangeStart = announcementsPagination.totalElements === 0 ? 0 : (announcementsPage - 1) * announcementsPagination.size + 1;
     const announcementsRangeEnd = Math.min(announcementsPage * announcementsPagination.size, announcementsPagination.totalElements);
 
+    // TEMP: Mock data for UI testing only
+    const MOCK_EVENTS = [
+        {
+            id: 'mock-1',
+            title: 'Friday Community Gathering',
+            date: '17 Oct 2025',
+            startTime: '09:00 AM',
+            timeStatus: 'Upcoming',
+            status: 'published',
+        },
+        {
+            id: 'mock-2',
+            title: 'Friday Client Presentation',
+            date: '19 Oct 2025',
+            startTime: '02:00 PM',
+            timeStatus: 'Ongoing',
+            status: 'published',
+        },
+        {
+            id: 'mock-3',
+            title: 'Monday Team Sync',
+            date: '17 Oct 2025',
+            startTime: '09:00 AM',
+            timeStatus: 'Past',
+            status: 'published',
+        }
+    ];
+
+    const isMocking = events.length === 0 && !eventsLoading;
+    
+    const filteredMockEvents = MOCK_EVENTS.filter(event => {
+        const matchesStatus = activeFilter === 'All' || event.status.toLowerCase() === activeFilter.toLowerCase();
+        const matchesTime = timeFilter === 'ALL' || event.timeStatus === timeFilter;
+        return matchesStatus && matchesTime;
+    });
+
+    const displayEvents = isMocking ? filteredMockEvents : events;
+    const showEmptyState = displayEvents.length === 0 && !eventsLoading;
+
     return (
         <div className="space-y-[24px]">
             {/* Header */}
@@ -309,11 +363,11 @@ export default function EventsPage() {
                 <button
                     onClick={() => setActiveTab('events')}
                     className={`
-                        w-[250px] h-full flex items-center justify-center p-[16px]
-                        font-urbanist text-[18px] transition-all duration-300 relative
+                        w-[250px] flex items-center justify-center px-[16px] py-[16px]
+                        font-['Inter'] text-[18px] leading-[22px] outline-none transition-all duration-300
                         ${activeTab === 'events'
-                            ? 'text-[var(--brand)] font-semibold border-b-2 border-[var(--brand)]'
-                            : 'text-[var(--grey-800)] font-normal'
+                            ? 'text-[var(--brand)] font-semibold border-b-2 border-solid border-[var(--brand)]'
+                            : 'text-[#36394a] font-normal border-b-2 border-solid border-transparent'
                         }
                     `}
                 >
@@ -322,11 +376,11 @@ export default function EventsPage() {
                 <button
                     onClick={() => setActiveTab('announcements')}
                     className={`
-                        w-[250px] h-full flex items-center justify-center p-[16px]
-                        font-urbanist text-[18px] transition-all duration-300 relative
+                        w-[250px] flex items-center justify-center px-[16px] py-[16px]
+                        font-['Inter'] text-[18px] leading-[22px] outline-none transition-all duration-300
                         ${activeTab === 'announcements'
-                            ? 'text-[var(--brand)] font-semibold border-b-2 border-[var(--brand)]'
-                            : 'text-[var(--grey-800)] font-normal'
+                            ? 'text-[var(--brand)] font-semibold border-b-2 border-solid border-[var(--brand)]'
+                            : 'text-[#36394a] font-normal border-b-2 border-solid border-transparent'
                         }
                     `}
                 >
@@ -343,7 +397,7 @@ export default function EventsPage() {
                             {/* Controls */}
                             <div className="flex justify-between items-center mb-[24px] h-[40px]">
                                 <div className="flex items-center">
-                                    {['All', 'Upcoming', 'Past', 'Drafts'].map((filter, index, arr) => (
+                                    {['All', 'Published', 'Draft', 'Cancelled', 'Completed'].map((filter, index, arr) => (
                                         <button
                                             key={filter}
                                             onClick={() => { setActiveFilter(filter as any); setEventsPage(1); }}
@@ -357,9 +411,6 @@ export default function EventsPage() {
                                         ${index !== 0 ? '-ml-[1px]' : ''}
                                     `}
                                         >
-                                            {filter === 'All' && activeFilter === 'All' && (
-                                                <div className="w-[10px] h-[10px] rounded-full"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" fill="white" stroke="white" strokeWidth="1" /></svg></div>
-                                            )}
                                             {filter}
                                         </button>
                                     ))}
@@ -430,73 +481,98 @@ export default function EventsPage() {
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                                         </div>
                                     </div>
-                                    <div className="border border-[var(--border-01)] rounded-[12px] flex items-center gap-[8px] px-[8px] py-[6px] bg-white">
+                                    <div className="bg-[var(--white\/white-900,white)] border border-[var(--white\/border,#e2e8f0)] rounded-[12px] flex items-center gap-[8px] px-[8px] py-[6px]">
                                         <button
                                             onClick={() => setViewMode('list')}
-                                            className={`flex items-center justify-center px-[12px] py-[8px] rounded-[8px] transition-colors ${viewMode === 'list' ? 'bg-[rgba(7,119,52,0.1)] text-[var(--brand)]' : 'text-[var(--grey-100)] hover:bg-gray-50'}`}
+                                            className={`flex items-center justify-center px-[12px] py-[6px] rounded-[8px] transition-colors ${viewMode === 'list' ? 'bg-[rgba(7,119,52,0.1)]' : 'hover:bg-gray-50'}`}
                                         >
-                                            <GridViewIcon size={18} />
+                                            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M6.75 2.25H2.25V6.75H6.75V2.25Z" stroke={viewMode === 'list' ? "#077734" : "#666d80"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                                <path d="M15.75 2.25H11.25V6.75H15.75V2.25Z" stroke={viewMode === 'list' ? "#077734" : "#666d80"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                                <path d="M15.75 11.25H11.25V15.75H15.75V11.25Z" stroke={viewMode === 'list' ? "#077734" : "#666d80"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                                <path d="M6.75 11.25H2.25V15.75H6.75V11.25Z" stroke={viewMode === 'list' ? "#077734" : "#666d80"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                            </svg>
                                         </button>
                                         <button
                                             onClick={() => setViewMode('calendar')}
-                                            className={`flex items-center justify-center px-[12px] py-[8px] rounded-[8px] transition-colors ${(viewMode as string) === 'calendar' ? 'bg-[rgba(7,119,52,0.1)] text-[var(--brand)]' : 'text-[var(--grey-100)] hover:bg-gray-50'}`}
+                                            className={`flex items-center justify-center px-[12px] py-[6px] rounded-[8px] transition-colors ${(viewMode as string) === 'calendar' ? 'bg-[rgba(7,119,52,0.1)]' : 'hover:bg-gray-50'}`}
                                         >
-                                            <CalendarViewIcon size={18} />
+                                            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M6 1.5V3.75" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+                                                <path d="M12 1.5V3.75" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+                                                <path d="M2.625 6.81738H15.375" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+                                                <path d="M15.75 6.375V12.75C15.75 15 14.625 16.5 12 16.5H6C3.375 16.5 2.25 15 2.25 12.75V6.375C2.25 4.125 3.375 2.625 6 2.625H12C14.625 2.625 15.75 4.125 15.75 6.375Z" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+                                                <path d="M11.7709 10.2748H11.7776" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                <path d="M11.7709 12.5248H11.7776" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                <path d="M8.99645 10.2748H9.00318" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                <path d="M8.99645 12.5248H9.00318" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                <path d="M6.22011 10.2748H6.22684" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                <path d="M6.22011 12.5248H6.22684" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                            </svg>
                                         </button>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Separator */}
-                            <div className="h-[2px] bg-[#f6f6f6] rounded-[2px] w-full mb-[24px]" />
-
                             {/* Table */}
                             <div className="w-full overflow-hidden">
+                                {showEmptyState ? (
+                                    <div className="bg-[var(--white\/table-white,#fafbfb)] border border-[var(--white\/border,#e2e8f0)] border-dashed flex flex-col gap-[16px] items-center px-[24px] py-[80px] rounded-[24px] w-full mb-[24px]">
+                                        <div className="bg-white border border-[#e2e8f0] flex items-center justify-center p-[8px] rounded-[99px] size-[48px]">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#666d80" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line><line x1="9" y1="15" x2="15" y2="15"></line><line x1="12" y1="12" x2="12" y2="18"></line></svg>
+                                        </div>
+                                        <div className="flex flex-col gap-[8px] items-center text-center">
+                                            <h3 className="font-['Inter'] font-bold text-[20px] text-[#36394a]">
+                                                No {timeFilter !== 'ALL' ? timeFilter.toLowerCase() + ' ' : ''}{activeFilter !== 'All' ? activeFilter.toLowerCase() + ' ' : ''}events found
+                                            </h3>
+                                            <p className="font-['Inter'] font-medium text-[16px] text-[#666d80] max-w-[374px]">
+                                                Try adjusting your filters or create a new event to get started.
+                                            </p>
+                                        </div>
+                                    </div>
+                                ) : (
                                 <table className="w-full text-left border-collapse">
                                     <thead className="bg-[#fafbfb] border-b border-t border-[var(--border-01)] h-[48px]">
                                         <tr>
-                                            <th className="w-[52px] px-[16px] py-[14px]">
-                                                <input type="checkbox" className="w-[20px] h-[20px] rounded-[4px] border-[#e2e8f0] text-[var(--brand)] focus:ring-0 checked:bg-[var(--brand)] cursor-pointer transition-colors" />
-                                            </th>
                                             <th className="px-[16px] py-[14px] font-urbanist font-medium text-[12px] text-[#666d80] uppercase">Title</th>
                                             <th className="px-[16px] py-[14px] font-urbanist font-medium text-[12px] text-[#666d80] uppercase">Date & Time</th>
-                                            <th className="px-[16px] py-[14px] font-urbanist font-medium text-[12px] text-[#666d80] uppercase">Message</th>
-                                            <th className="px-[16px] py-[14px] font-urbanist font-medium text-[12px] text-[#666d80] uppercase">Type</th>
                                             <th className="px-[16px] py-[14px] font-urbanist font-medium text-[12px] text-[#666d80] uppercase">Status</th>
                                             <th className="px-[16px] py-[14px] font-urbanist font-medium text-[12px] text-[#666d80] uppercase">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-none bg-white">
-                                        {events.map((event) => (
-                                            <tr key={event.id} className="group hover:bg-[#fafbfb] transition-colors duration-150">
-                                                <td className="w-[52px] h-[70px] px-[16px] py-[22px]">
-                                                    <input type="checkbox" className="w-[20px] h-[20px] rounded-[4px] border-[#e2e8f0] text-[var(--brand)] focus:ring-0 checked:bg-[var(--brand)] cursor-pointer transition-colors" />
-                                                </td>
-                                                <td className="h-[70px] px-[16px] py-[22px] font-urbanist font-medium text-[14px] text-[#666d80]">
+                                        {displayEvents.map((event: any) => (
+                                            <tr key={event.id} className="group hover:bg-[#fafbfb] transition-colors duration-150 border-b border-[#e2e8f0] last:border-0">
+                                                <td className="h-[70px] px-[16px] py-[14px] font-['Inter'] font-medium text-[14px] text-[#666d80]">
                                                     {event.title}
                                                 </td>
-                                                <td className="h-[70px] px-[16px] py-[22px] font-urbanist font-medium text-[14px] text-[#666d80]">
-                                                    {event.date}  {event.startTime}
+                                                <td className="h-[70px] px-[16px] py-[14px]">
+                                                    <div className="flex flex-col gap-[4px]">
+                                                        <span className="font-['Inter'] font-medium text-[14px] text-[#666d80]">
+                                                            {event.date} | {event.startTime}
+                                                        </span>
+                                                        <span className={`font-['Inter'] font-normal text-[12px] ${
+                                                            event.timeStatus === 'Upcoming' ? 'text-[#47b881]' : 
+                                                            event.timeStatus === 'Past' ? 'text-[#9ca3af]' : 'text-[#ffad0d]'
+                                                        }`}>
+                                                            {event.timeStatus}
+                                                        </span>
+                                                    </div>
                                                 </td>
-                                                <td className="h-[70px] px-[16px] py-[22px] font-urbanist font-medium text-[14px] text-[#666d80] truncate max-w-[200px]" title={event.description}>
-                                                    {event.description}
-                                                </td>
-                                                <td className="h-[70px] px-[16px] py-[22px] font-urbanist font-medium text-[14px] text-[#666d80]">
-                                                    {event.category}
-                                                </td>
-                                                <td className="h-[70px] px-[16px] py-[22px]">
+                                                <td className="h-[70px] px-[16px] py-[14px]">
                                                     <span className={`
-                                                inline-flex items-center px-[8px] py-[4px] rounded-[8px] text-[12px] font-normal capitalize border
-                                                ${event.status === 'sent' ? 'text-[#47b881] border-[#6bc497]' : ''}
-                                                ${event.status === 'draft' ? 'text-[#344054] border-[#D0D5DD]' : ''}
-                                                ${event.status === 'past' ? 'text-[#B42318] border-[#FECDCA]' : ''}
+                                                inline-flex items-center px-[8px] py-[4px] rounded-[8px] text-[12px] font-normal capitalize border bg-white
+                                                ${event.status?.toLowerCase() === 'published' ? 'text-[#47b881] border-[#6bc497]' : ''}
+                                                ${event.status?.toLowerCase() === 'cancelled' ? 'text-[#f64c4c] border-[#eb6f70]' : ''}
+                                                ${event.status?.toLowerCase() === 'draft' ? 'text-[#ffad0d] border-[#ffc62b]' : ''}
+                                                ${event.status?.toLowerCase() === 'completed' ? 'text-[#47b881] border-[#6bc497]' : ''}
                                             `}
                                                         style={{ fontFamily: "'Inter Tight', sans-serif" }}
                                                     >
-                                                        {event.status}
+                                                        {event.status?.toLowerCase() === 'draft' ? 'Drafts' : event.status}
                                                     </span>
                                                 </td>
-                                                <td className="h-[70px] px-[16px] py-[22px]">
+                                                <td className="h-[70px] px-[16px] py-[14px]">
                                                     <div className="flex items-center gap-[12px]">
                                                         <button
                                                             onClick={() => handleViewEvent(event)}
@@ -516,11 +592,12 @@ export default function EventsPage() {
                                         ))}
                                     </tbody>
                                 </table>
+                                )}
 
                                 {/* Pagination Footer */}
                                 <div className="flex items-center justify-between h-[40px] px-0 mt-0 border-t border-[var(--border-01)] bg-white relative w-full">
                                     <p className="absolute left-0 top-[10px] font-dm-sans text-[14px] text-[#666d80]">
-                                        {eventsRangeStart}-{eventsRangeEnd} of {eventsPagination.totalElements} items
+                                        {isMocking ? `${displayEvents.length > 0 ? 1 : 0}-${displayEvents.length} of ${displayEvents.length} items` : `${eventsRangeStart}-${eventsRangeEnd} of ${eventsPagination.totalElements} items`}
                                     </p>
                                     <div className="absolute right-[64px] top-[8px] flex items-center gap-[8px]">
                                         <div className="bg-white h-[23px] px-[11px] rounded-[8px] flex items-center justify-center gap-[8px] cursor-pointer">
@@ -661,9 +738,6 @@ export default function EventsPage() {
                         <table className="w-full text-left border-collapse">
                             <thead className="bg-[#fafbfb] border-b border-t border-[var(--border-01)] h-[48px]">
                                 <tr>
-                                    <th className="w-[52px] px-[16px] py-[14px]">
-                                        <input type="checkbox" className="w-[20px] h-[20px] rounded-[4px] border-[#e2e8f0] text-[var(--brand)] focus:ring-0 checked:bg-[var(--brand)] cursor-pointer transition-colors" />
-                                    </th>
                                     <th className="px-[16px] py-[14px] font-urbanist font-medium text-[12px] text-[#666d80] uppercase">Title</th>
                                     <th className="px-[16px] py-[14px] font-urbanist font-medium text-[12px] text-[#666d80] uppercase">Message</th>
                                     <th className="px-[16px] py-[14px] font-urbanist font-medium text-[12px] text-[#666d80] uppercase">Date Sent</th>
@@ -674,9 +748,6 @@ export default function EventsPage() {
                             <tbody className="divide-none bg-white">
                                 {announcements.map((announcement) => (
                                         <tr key={announcement.id} className="group hover:bg-[#fafbfb] transition-colors duration-150">
-                                            <td className="w-[52px] h-[70px] px-[16px] py-[22px]">
-                                                <input type="checkbox" className="w-[20px] h-[20px] rounded-[4px] border-[#e2e8f0] text-[var(--brand)] focus:ring-0 checked:bg-[var(--brand)] cursor-pointer transition-colors" />
-                                            </td>
                                             <td className="h-[70px] px-[16px] py-[22px] font-urbanist font-medium text-[14px] text-[#666d80]">
                                                 {announcement.title}
                                             </td>
