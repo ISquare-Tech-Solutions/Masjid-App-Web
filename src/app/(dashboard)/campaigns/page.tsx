@@ -54,7 +54,7 @@ export default function CampaignsPage() {
     <div className="flex flex-col gap-[24px]">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-[24px] font-semibold text-[#1F1F1F] font-urbanist">Campaign</h1>
+        <h1 className="text-[24px] font-semibold text-[#1F1F1F] font-inter">Campaign</h1>
         <button
           onClick={() => setIsAddModalOpen(true)}
           className="flex items-center gap-[10px] h-[44px] bg-[var(--brand)] text-white px-[24px] py-[16px] rounded-[12px] hover:bg-[#046c4e] transition-colors"
@@ -81,7 +81,7 @@ export default function CampaignsPage() {
 
       {/* Table Section */}
       <div className="rounded-[24px] border border-[var(--border-01)] flex flex-col p-[24px] gap-[16px]">
-        <h2 className="text-[20px] font-semibold text-[#1F1F1F] font-urbanist">Active Campaigns</h2>
+        <h2 className="text-[20px] font-semibold text-[#1F1F1F] font-inter">Active Campaigns</h2>
         <CampaignTable key={tableKey} />
       </div>
 

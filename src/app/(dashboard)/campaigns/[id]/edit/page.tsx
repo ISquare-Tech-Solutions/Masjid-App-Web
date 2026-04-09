@@ -84,7 +84,7 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
     <div className="flex flex-col gap-[24px]">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-[24px] font-semibold text-[#1F1F1F] font-urbanist">Edit Campaign</h1>
+        <h1 className="text-[24px] font-semibold text-[#1F1F1F] font-inter">Edit Campaign</h1>
         <Link
           href={`/campaigns/${id}`}
           className="flex items-center gap-[8px] bg-white border border-[var(--border-01)] text-[var(--grey-800)] px-[16px] py-[8px] rounded-[8px] hover:bg-[#fafafa] transition-colors shadow-sm font-medium text-[14px]"

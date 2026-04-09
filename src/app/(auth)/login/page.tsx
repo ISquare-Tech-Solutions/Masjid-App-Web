@@ -155,10 +155,10 @@ export default function LoginPage() {
 
       {/* Footer */}
       <footer className="px-[136px] py-[42px] flex justify-between items-center">
-        <span className="font-dm-sans font-medium text-[12px] text-[var(--neutral-600)]">
+        <span className="font-inter font-medium text-[12px] text-[var(--neutral-600)]">
           © 2025 ALL RIGHTS RESERVED
         </span>
-        <span className="font-dm-sans font-medium text-[12px] text-[var(--neutral-600)]">
+        <span className="font-inter font-medium text-[12px] text-[var(--neutral-600)]">
           Terms Of Use. Privacy Policy
         </span>
       </footer>

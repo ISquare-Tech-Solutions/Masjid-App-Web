@@ -39,8 +39,8 @@ const Checkbox = ({
       )}
     </div>
     <span
-      className="font-urbanist text-[16px] text-[#4b4b4b] leading-normal select-none"
-      style={{ fontFamily: "'Inter Tight', sans-serif" }}
+      className="font-inter text-[16px] text-[#4b4b4b] leading-normal select-none"
+      style={{ fontFamily: "'Inter', sans-serif" }}
     >
       {label}
     </span>
@@ -60,7 +60,7 @@ const RadioYesNo = ({
     <div className="w-[20px] h-[20px] rounded-full border border-[#e2e8f0] bg-white flex items-center justify-center shrink-0">
       {selected && <div className="w-[10px] h-[10px] rounded-full bg-[var(--brand)]" />}
     </div>
-    <span className="font-urbanist font-medium text-[14px] text-[#667085]">{label}</span>
+    <span className="font-inter font-medium text-[14px] text-[#667085]">{label}</span>
   </label>
 );
 
@@ -76,7 +76,7 @@ const SettingInput = ({
   onChange: (value: string) => void;
 }) => (
   <div className="flex flex-col gap-[8px] flex-1 min-w-0">
-    <label className="font-urbanist font-semibold text-[16px] text-[#4b4b4b] tracking-[0.16px] leading-none">
+    <label className="font-inter font-semibold text-[16px] text-[#4b4b4b] tracking-[0.16px] leading-none">
       {label}
     </label>
     <input
@@ -84,7 +84,7 @@ const SettingInput = ({
       placeholder={placeholder}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full h-[48px] px-[21px] py-[16px] border border-[#e2e8f0] rounded-[12px] font-urbanist text-[16px] text-[#666d80] placeholder:text-[#666d80] focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-all"
+      className="w-full h-[48px] px-[21px] py-[16px] border border-[#e2e8f0] rounded-[12px] font-inter text-[16px] text-[#666d80] placeholder:text-[#666d80] focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-all"
     />
   </div>
 );
@@ -117,7 +117,7 @@ const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 
 
   return (
     <div
-      className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-[12px] shadow-lg text-white font-urbanist font-medium text-[15px] transition-all ${
+      className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-[12px] shadow-lg text-white font-inter font-medium text-[15px] transition-all ${
         type === 'success' ? 'bg-[var(--brand)]' : 'bg-[#dc2626]'
       }`}
     >
@@ -330,13 +330,13 @@ function SettingsPageContent() {
     <div className="flex flex-col gap-[24px]">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      <h1 className="font-urbanist font-bold text-[28px] text-[#1f1f1f] leading-none">App Settings</h1>
+      <h1 className="font-inter font-bold text-[28px] text-[#1f1f1f] leading-none">App Settings</h1>
 
       {/* Tab Bar */}
       <div className="bg-[rgba(7,119,52,0.05)] flex items-center">
         <button
           onClick={() => setActiveTab('masjid')}
-          className={`w-[250px] h-[69px] flex items-center justify-center font-urbanist text-[18px] transition-colors
+          className={`w-[250px] h-[69px] flex items-center justify-center font-inter text-[18px] transition-colors
             ${activeTab === 'masjid'
               ? 'border-b-2 border-[var(--brand)] text-[var(--brand)] font-semibold'
               : 'border-b-2 border-transparent text-[#36394a] font-normal'
@@ -346,7 +346,7 @@ function SettingsPageContent() {
         </button>
         <button
           onClick={() => setActiveTab('bank')}
-          className={`w-[250px] h-[69px] flex items-center justify-center font-urbanist text-[18px] transition-colors
+          className={`w-[250px] h-[69px] flex items-center justify-center font-inter text-[18px] transition-colors
             ${activeTab === 'bank'
               ? 'border-b-2 border-[var(--brand)] text-[var(--brand)] font-semibold'
               : 'border-b-2 border-transparent text-[#36394a] font-normal'
@@ -362,7 +362,7 @@ function SettingsPageContent() {
           <LoadingSkeleton />
         ) : (
           <div className="border border-[#e2e8f0] rounded-[24px] p-[24px] flex flex-col gap-[24px]">
-            <h2 className="font-urbanist font-semibold text-[20px] text-[#36394a]">Masjid Informations</h2>
+            <h2 className="font-inter font-semibold text-[20px] text-[#36394a]">Masjid Informations</h2>
             <div className="h-[2px] bg-[#f6f6f6] rounded-[2px]" />
 
             {/* Form Fields + Logo Upload */}
@@ -382,14 +382,14 @@ function SettingsPageContent() {
                 </div>
                 <button className="flex items-center gap-[8px] mb-[12px]">
                   <UploadIcon className="text-[var(--brand)]" size={20} />
-                  <span className="text-[16px] text-[var(--brand)]" style={{ fontFamily: "'Inter Tight', sans-serif" }}>
+                  <span className="text-[16px] text-[var(--brand)]" style={{ fontFamily: "'Inter', sans-serif" }}>
                     Upload LOGO
                   </span>
                 </button>
-                <p className="text-[14px] text-[#666d80] text-center" style={{ fontFamily: "'Inter Tight', sans-serif" }}>
+                <p className="text-[14px] text-[#666d80] text-center" style={{ fontFamily: "'Inter', sans-serif" }}>
                   Upload Your Logo.
                 </p>
-                <p className="text-[12px] text-[#666d80] text-center mt-[4px]" style={{ fontFamily: "'Inter Tight', sans-serif" }}>
+                <p className="text-[12px] text-[#666d80] text-center mt-[4px]" style={{ fontFamily: "'Inter', sans-serif" }}>
                   File Format <strong className="text-[#36394a]">.jpeg, .Png</strong> Recommened Size{' '}
                   <strong className="text-[#36394a]">600x600 (1:1)</strong>
                 </p>
@@ -399,14 +399,14 @@ function SettingsPageContent() {
             {/* About + Address */}
             <div className="flex gap-[24px]">
               <div className="flex flex-col gap-[8px] flex-1">
-                <label className="font-urbanist font-semibold text-[16px] text-[#4b4b4b] tracking-[0.16px] leading-none">
+                <label className="font-inter font-semibold text-[16px] text-[#4b4b4b] tracking-[0.16px] leading-none">
                   About Masjid
                 </label>
                 <textarea
                   placeholder="-"
                   value={about}
                   onChange={(e) => setAbout(e.target.value)}
-                  className="w-full min-h-[148px] px-[21px] py-[16px] border border-[#e2e8f0] rounded-[12px] font-urbanist text-[16px] text-[#666d80] placeholder:text-[#666d80] focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent resize-none"
+                  className="w-full min-h-[148px] px-[21px] py-[16px] border border-[#e2e8f0] rounded-[12px] font-inter text-[16px] text-[#666d80] placeholder:text-[#666d80] focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent resize-none"
                 />
               </div>
               <div className="flex flex-col gap-[24px] flex-1">
@@ -424,7 +424,7 @@ function SettingsPageContent() {
               <button
                 onClick={handleSaveMasjidDetails}
                 disabled={saving}
-                className="h-[44px] px-[24px] bg-[var(--brand)] text-white rounded-[12px] font-urbanist font-medium text-[16px] hover:bg-[#065d29] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-[44px] px-[24px] bg-[var(--brand)] text-white rounded-[12px] font-inter font-medium text-[16px] hover:bg-[#065d29] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saving ? 'Saving...' : 'Save'}
               </button>
@@ -435,10 +435,10 @@ function SettingsPageContent() {
             {/* Service Offered */}
             <div className="flex gap-[24px]">
               <div className="flex flex-col gap-[8px] flex-1">
-                <h2 className="font-urbanist font-semibold text-[20px] text-[#36394a]">Service Offered</h2>
+                <h2 className="font-inter font-semibold text-[20px] text-[#36394a]">Service Offered</h2>
                 <p
                   className="text-[16px] text-[#666d80] leading-[1.25] max-w-[300px]"
-                  style={{ fontFamily: "'Inter Tight', sans-serif" }}
+                  style={{ fontFamily: "'Inter', sans-serif" }}
                 >
                   Select the services provided by your masjid. These will be displayed in the mobile app for community
                   awareness.
@@ -483,10 +483,10 @@ function SettingsPageContent() {
             {/* Facilities Available */}
             <div className="flex gap-[24px]">
               <div className="flex flex-col gap-[8px] flex-1">
-                <h2 className="font-urbanist font-semibold text-[20px] text-[#36394a]">Facilities Available</h2>
+                <h2 className="font-inter font-semibold text-[20px] text-[#36394a]">Facilities Available</h2>
                 <p
                   className="text-[16px] text-[#666d80] leading-[1.25] max-w-[300px]"
-                  style={{ fontFamily: "'Inter Tight', sans-serif" }}
+                  style={{ fontFamily: "'Inter', sans-serif" }}
                 >
                   Indicate the facilities available at your masjid. These will help users understand accessibility and
                   amenities.
@@ -526,10 +526,10 @@ function SettingsPageContent() {
             {/* Capacity */}
             <div className="flex gap-[24px]">
               <div className="flex flex-col gap-[8px] flex-1">
-                <h2 className="font-urbanist font-semibold text-[20px] text-[#36394a]">Capacity</h2>
+                <h2 className="font-inter font-semibold text-[20px] text-[#36394a]">Capacity</h2>
                 <p
                   className="text-[16px] text-[#666d80] leading-[1.25] max-w-[300px]"
-                  style={{ fontFamily: "'Inter Tight', sans-serif" }}
+                  style={{ fontFamily: "'Inter', sans-serif" }}
                 >
                   Provide the approximate capacity of the masjid. This helps users plan their visit, especially during
                   peak prayer times.
@@ -537,18 +537,18 @@ function SettingsPageContent() {
               </div>
               <div className="flex flex-col gap-[16px] flex-1">
                 <div className="flex flex-col gap-[6px]">
-                  <span className="font-urbanist font-medium text-[14px] text-[#667085]">Men</span>
+                  <span className="font-inter font-medium text-[14px] text-[#667085]">Men</span>
                   <input
                     type="number"
                     placeholder="00"
                     value={mensCapacity}
                     onChange={(e) => setMensCapacity(e.target.value)}
-                    className="w-full h-[48px] px-[21px] py-[16px] border border-[#e2e8f0] rounded-[12px] font-urbanist text-[16px] text-[#8e8e8e] placeholder:text-[#8e8e8e] focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent"
+                    className="w-full h-[48px] px-[21px] py-[16px] border border-[#e2e8f0] rounded-[12px] font-inter text-[16px] text-[#8e8e8e] placeholder:text-[#8e8e8e] focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent"
                   />
                 </div>
                 <div className="flex flex-col gap-[6px]">
                   <div className="flex items-center justify-between">
-                    <span className="font-urbanist font-medium text-[14px] text-[#667085]">Women&apos;s Access</span>
+                    <span className="font-inter font-medium text-[14px] text-[#667085]">Women&apos;s Access</span>
                     <div className="flex items-center gap-[16px]">
                       <RadioYesNo label="Yes" selected={hasWomensArea} onChange={() => setHasWomensArea(true)} />
                       <RadioYesNo label="No" selected={!hasWomensArea} onChange={() => { setHasWomensArea(false); setWomensCapacity(''); }} />
@@ -560,7 +560,7 @@ function SettingsPageContent() {
                       placeholder="00"
                       value={womensCapacity}
                       onChange={(e) => setWomensCapacity(e.target.value)}
-                      className="w-full h-[48px] px-[21px] py-[16px] border border-[#e2e8f0] rounded-[12px] font-urbanist text-[16px] text-[#8e8e8e] placeholder:text-[#8e8e8e] focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent"
+                      className="w-full h-[48px] px-[21px] py-[16px] border border-[#e2e8f0] rounded-[12px] font-inter text-[16px] text-[#8e8e8e] placeholder:text-[#8e8e8e] focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent"
                     />
                   )}
                 </div>
@@ -572,7 +572,7 @@ function SettingsPageContent() {
               <button
                 onClick={handleSaveMasjidDetails}
                 disabled={saving}
-                className="h-[44px] px-[24px] bg-[var(--brand)] text-white rounded-[12px] font-urbanist font-medium text-[16px] hover:bg-[#065d29] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-[44px] px-[24px] bg-[var(--brand)] text-white rounded-[12px] font-inter font-medium text-[16px] hover:bg-[#065d29] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saving ? 'Saving...' : 'Save'}
               </button>
@@ -587,13 +587,13 @@ function SettingsPageContent() {
           <LoadingSkeleton />
         ) : (
           <div className="border border-[#e2e8f0] rounded-[24px] p-[24px] flex flex-col gap-[24px]">
-            <h2 className="font-urbanist font-semibold text-[20px] text-[#36394a]">BANK &amp; PAYMENT SETTINGS</h2>
+            <h2 className="font-inter font-semibold text-[20px] text-[#36394a]">BANK &amp; PAYMENT SETTINGS</h2>
             <div className="h-[2px] bg-[#f6f6f6] rounded-[2px]" />
 
             {/* Stripe Connect */}
             <div className="flex gap-[24px]">
               <div className="flex flex-col gap-[8px] flex-1">
-                <h3 className="font-urbanist font-semibold text-[18px] text-[#36394a]">Stripe Connect</h3>
+                <h3 className="font-inter font-semibold text-[18px] text-[#36394a]">Stripe Connect</h3>
                 <p className="text-[14px] text-[#666d80] leading-[1.4] max-w-[300px]">
                   Connect your Stripe account to accept online donations. Stripe handles all card payments, Apple Pay, and Google Pay securely.
                 </p>
@@ -605,13 +605,13 @@ function SettingsPageContent() {
                     <div className="flex flex-col gap-[10px]">
                       <div className="flex items-center gap-[8px]">
                         <div className={`w-[8px] h-[8px] rounded-full ${stripeStatus.acceptingDonations ? 'bg-[var(--brand)]' : 'bg-amber-400'}`} />
-                        <span className="font-urbanist text-[14px] text-[#4b4b4b]">
+                        <span className="font-inter text-[14px] text-[#4b4b4b]">
                           Accepting Donations: <strong>{stripeStatus.acceptingDonations ? 'Enabled' : 'Pending'}</strong>
                         </span>
                       </div>
                       <div className="flex items-center gap-[8px]">
                         <div className={`w-[8px] h-[8px] rounded-full ${stripeStatus.payoutsEnabled ? 'bg-[var(--brand)]' : 'bg-amber-400'}`} />
-                        <span className="font-urbanist text-[14px] text-[#4b4b4b]">
+                        <span className="font-inter text-[14px] text-[#4b4b4b]">
                           Payouts to Bank: <strong>{stripeStatus.payoutsEnabled ? 'Enabled' : 'Pending'}</strong>
                         </span>
                       </div>
@@ -628,7 +628,7 @@ function SettingsPageContent() {
                           href="https://dashboard.stripe.com/settings/account"
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="h-[40px] px-[20px] bg-[var(--brand)] text-white rounded-[10px] font-urbanist font-medium text-[14px] hover:bg-[#065d29] transition-colors flex items-center"
+                          className="h-[40px] px-[20px] bg-[var(--brand)] text-white rounded-[10px] font-inter font-medium text-[14px] hover:bg-[#065d29] transition-colors flex items-center"
                         >
                           Complete Setup on Stripe
                         </a>
@@ -636,7 +636,7 @@ function SettingsPageContent() {
                       <button
                         onClick={handleDisconnectStripe}
                         disabled={disconnectingStripe}
-                        className="h-[40px] px-[20px] border border-red-200 text-red-600 rounded-[10px] font-urbanist font-medium text-[14px] hover:bg-red-50 transition-colors disabled:opacity-50"
+                        className="h-[40px] px-[20px] border border-red-200 text-red-600 rounded-[10px] font-inter font-medium text-[14px] hover:bg-red-50 transition-colors disabled:opacity-50"
                       >
                         {disconnectingStripe ? 'Disconnecting...' : 'Disconnect'}
                       </button>
@@ -646,12 +646,12 @@ function SettingsPageContent() {
                   <div className="flex flex-col gap-[12px]">
                     <div className="flex items-center gap-[8px]">
                       <div className="w-[8px] h-[8px] rounded-full bg-gray-300" />
-                      <span className="font-urbanist text-[14px] text-[#666d80]">Not connected</span>
+                      <span className="font-inter text-[14px] text-[#666d80]">Not connected</span>
                     </div>
                     <button
                       onClick={handleConnectStripe}
                       disabled={connectingStripe}
-                      className="w-fit h-[44px] px-[24px] bg-[var(--brand)] text-white rounded-[12px] font-urbanist font-medium text-[16px] hover:bg-[#065d29] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-fit h-[44px] px-[24px] bg-[var(--brand)] text-white rounded-[12px] font-inter font-medium text-[16px] hover:bg-[#065d29] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {connectingStripe ? 'Redirecting to Stripe...' : 'Connect Stripe Account'}
                     </button>
