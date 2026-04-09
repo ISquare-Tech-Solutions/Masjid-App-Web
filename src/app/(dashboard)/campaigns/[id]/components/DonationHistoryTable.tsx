@@ -28,7 +28,7 @@ const StatusPill = ({ status }: { status: DonationRow['status'] }) => {
   const { border, text } = styles[status] ?? { border: 'border-[#e2e8f0]', text: 'text-[#667085]' };
   return (
     <span className={`inline-flex items-center px-[8px] py-[4px] rounded-[8px] border ${border} ${text} text-[12px] font-normal`}
-      style={{ fontFamily: "'Inter Tight', sans-serif" }}>
+      style={{ fontFamily: "'Inter', sans-serif" }}>
       {STATUS_LABEL[status] ?? status}
     </span>
   );
@@ -74,16 +74,16 @@ export default function DonationHistoryTable({ campaignId }: { campaignId: strin
 
   return (
     <div className="rounded-[24px] border border-[var(--border-01)] flex flex-col p-[24px] gap-[16px]">
-      <h2 className="text-[20px] font-semibold text-[#1F1F1F] font-urbanist">Donation History</h2>
+      <h2 className="text-[20px] font-semibold text-[#1F1F1F] font-inter">Donation History</h2>
 
       <table className="w-full text-left">
         <thead>
           <tr className="bg-[#fafbfb] border-y border-[var(--border-01)] h-[48px]">
-            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-urbanist">Name</th>
-            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-urbanist">Amount</th>
-            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-urbanist">Date</th>
-            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-urbanist">Payment Method</th>
-            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-urbanist">Status</th>
+            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-inter">Name</th>
+            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-inter">Amount</th>
+            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-inter">Date</th>
+            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-inter">Payment Method</th>
+            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-inter">Status</th>
           </tr>
         </thead>
         <tbody>
@@ -93,10 +93,10 @@ export default function DonationHistoryTable({ campaignId }: { campaignId: strin
             <tr><td colSpan={5} className="px-[16px] py-[32px] text-center text-[var(--neutral-500)]">No donations yet.</td></tr>
           ) : donations.map((donation, index) => (
             <tr key={donation.id} className={`h-[56px] hover:bg-[#f0f4f8] transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-[#fafbfb]'}`}>
-              <td className="px-[16px] text-[14px] text-[#667085] font-medium font-urbanist">{donation.name}</td>
-              <td className="px-[16px] text-[14px] text-[#36394A] font-bold font-urbanist">{donation.amount}</td>
-              <td className="px-[16px] text-[14px] text-[#667085] font-medium font-urbanist">{donation.date}</td>
-              <td className="px-[16px] text-[14px] text-[#667085] font-medium font-urbanist">{donation.method}</td>
+              <td className="px-[16px] text-[14px] text-[#667085] font-medium font-inter">{donation.name}</td>
+              <td className="px-[16px] text-[14px] text-[#36394A] font-bold font-inter">{donation.amount}</td>
+              <td className="px-[16px] text-[14px] text-[#667085] font-medium font-inter">{donation.date}</td>
+              <td className="px-[16px] text-[14px] text-[#667085] font-medium font-inter">{donation.method}</td>
               <td className="px-[16px]"><StatusPill status={donation.status} /></td>
             </tr>
           ))}
@@ -104,7 +104,7 @@ export default function DonationHistoryTable({ campaignId }: { campaignId: strin
       </table>
 
       {/* Pagination */}
-      <div className="h-[40px] border-t border-[#e2e8f0] flex items-center justify-between text-[14px] text-[#4b4b4b] font-dm-sans">
+      <div className="h-[40px] border-t border-[#e2e8f0] flex items-center justify-between text-[14px] text-[#4b4b4b] font-inter">
         <span>
           {totalItems === 0 ? '0' : `${currentPage * pageSize + 1}-${Math.min((currentPage + 1) * pageSize, totalItems)}`} of {totalItems} items
         </span>

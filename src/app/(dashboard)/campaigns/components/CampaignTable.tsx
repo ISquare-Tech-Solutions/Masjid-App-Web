@@ -39,7 +39,7 @@ const StatusPill = ({ status }: { status: Campaign['status'] }) => {
   const { border, text } = STATUS_STYLES[status] ?? { border: 'border-[#e2e8f0]', text: 'text-[#667085]' };
   return (
     <span className={`inline-flex items-center justify-center px-[8px] py-[4px] rounded-[8px] border ${border} ${text} text-[12px] font-normal capitalize`}
-      style={{ fontFamily: "'Inter Tight', sans-serif" }}>
+      style={{ fontFamily: "'Inter', sans-serif" }}>
       {STATUS_LABEL[status] ?? status}
     </span>
   );
@@ -180,8 +180,8 @@ export default function CampaignTable() {
                   ${isLast ? 'rounded-tr-[8px] rounded-br-[8px]' : ''}
                   ${isFirst ? 'border border-[var(--border-01)]' : 'border-t border-b border-r border-[var(--border-01)]'}
                   ${isActive
-                    ? 'bg-[var(--brand)] text-white font-bold font-urbanist'
-                    : 'bg-white font-normal text-[#36394a] font-urbanist hover:bg-[#fafbfb]'}
+                    ? 'bg-[var(--brand)] text-white font-bold font-inter'
+                    : 'bg-white font-normal text-[#36394a] font-inter hover:bg-[#fafbfb]'}
                 `}
               >
                 {TAB_LABELS[tab]}
@@ -196,7 +196,7 @@ export default function CampaignTable() {
             placeholder="Search Campaign"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-[40px] pl-[42px] pr-[14px] py-[10px] bg-white border border-[var(--border-01)] rounded-[11px] text-[12px] text-[var(--grey-800)] placeholder:text-[#666D80] font-urbanist focus:outline-none focus:border-[var(--brand)] transition-colors"
+            className="w-full h-[40px] pl-[42px] pr-[14px] py-[10px] bg-white border border-[var(--border-01)] rounded-[11px] text-[12px] text-[var(--grey-800)] placeholder:text-[#666D80] font-inter focus:outline-none focus:border-[var(--brand)] transition-colors"
           />
         </div>
       </div>
@@ -207,12 +207,12 @@ export default function CampaignTable() {
       <table className="w-full text-left">
         <thead>
           <tr className="bg-[#fafbfb] border-y border-[var(--border-01)] h-[48px]">
-            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-urbanist">Campaign Name</th>
-            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-urbanist">Cause</th>
-            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-urbanist">Goal &amp; Progress</th>
-            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-urbanist w-[160px]">Duration</th>
-            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-urbanist w-[140px]">Status</th>
-            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-urbanist w-[140px]">Action</th>
+            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-inter">Campaign Name</th>
+            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-inter">Cause</th>
+            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-inter">Goal &amp; Progress</th>
+            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-inter w-[160px]">Duration</th>
+            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-inter w-[140px]">Status</th>
+            <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-inter w-[140px]">Action</th>
           </tr>
         </thead>
         <tbody>
@@ -222,10 +222,10 @@ export default function CampaignTable() {
             <tr><td colSpan={6} className="px-[24px] py-[32px] text-center text-[var(--neutral-500)]">No campaigns found.</td></tr>
           ) : filteredCampaigns.map((campaign, index) => (
             <tr key={campaign.id} className={`h-[71px] hover:bg-[#f0f4f8] transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-[#fafbfb]'}`}>
-              <td className="px-[16px] text-[14px] text-[#666d80] font-medium font-urbanist">
+              <td className="px-[16px] text-[14px] text-[#666d80] font-medium font-inter">
                 <span className="line-clamp-2">{campaign.title}</span>
               </td>
-              <td className="px-[16px] text-[14px] text-[#666d80] font-medium font-urbanist">
+              <td className="px-[16px] text-[14px] text-[#666d80] font-medium font-inter">
                 <span className="line-clamp-2">{campaign.category}</span>
               </td>
               <td className="px-[16px] py-[14px]">
@@ -242,7 +242,7 @@ export default function CampaignTable() {
       </table>
 
       {/* Pagination */}
-      <div className="h-[40px] border-t border-[#e2e8f0] flex items-center justify-between text-[14px] text-[#4b4b4b] font-dm-sans mt-auto">
+      <div className="h-[40px] border-t border-[#e2e8f0] flex items-center justify-between text-[14px] text-[#4b4b4b] font-inter mt-auto">
         <span>
           {totalItems === 0 ? '0' : `${currentPage * pageSize + 1}-${Math.min((currentPage + 1) * pageSize, totalItems)}`} of {totalItems} items
         </span>

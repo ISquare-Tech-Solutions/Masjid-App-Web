@@ -72,7 +72,7 @@ export default function CampaignDetailsPage({ params }: { params: Promise<{ id: 
     <div className="flex flex-col gap-[24px]">
       {/* Page Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-[24px] font-semibold text-[#1F1F1F] font-urbanist">Campaign Details</h1>
+        <h1 className="text-[24px] font-semibold text-[#1F1F1F] font-inter">Campaign Details</h1>
         <Link
           href="/campaigns"
           className="flex items-center gap-[8px] bg-white border border-[var(--border-01)] text-[var(--grey-800)] px-[16px] py-[8px] rounded-[8px] hover:bg-[#fafafa] transition-colors shadow-sm font-medium text-[14px]"
@@ -88,7 +88,7 @@ export default function CampaignDetailsPage({ params }: { params: Promise<{ id: 
         <div className="flex gap-[32px]">
           <div className="flex-1 flex flex-col gap-[8px]">
             <div className="flex items-start justify-between">
-              <h2 className="text-[20px] font-bold text-[var(--grey-800)] font-urbanist">{campaign.title}</h2>
+              <h2 className="text-[20px] font-bold text-[var(--grey-800)] font-inter">{campaign.title}</h2>
               <span className={`inline-flex items-center px-[12px] py-[4px] rounded-[8px] border ${statusStyle?.border} ${statusStyle?.text} text-[14px] font-medium shrink-0 ml-[16px] capitalize`}>
                 {campaign.status}
               </span>
