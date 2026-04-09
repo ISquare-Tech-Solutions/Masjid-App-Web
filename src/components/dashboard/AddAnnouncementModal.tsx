@@ -147,7 +147,7 @@ export default function AddAnnouncementModal({ isOpen, onClose, announcement }: 
             <div className="bg-white rounded-[24px] p-[24px] flex flex-col gap-[24px]">
                 {/* Header */}
                 <div className="flex justify-between items-start">
-                    <h2 className="font-urbanist font-bold text-[24px] text-[var(--grey-800)] leading-normal">
+                    <h2 className="font-inter font-bold text-[24px] text-[var(--grey-800)] leading-normal">
                         {isEditMode ? 'Update Announcement' : (scheduleMode ? 'Schedule for later' : 'Add New Announcements')}
                     </h2>
                     <button
@@ -167,7 +167,7 @@ export default function AddAnnouncementModal({ isOpen, onClose, announcement }: 
 
                 {/* Title Field */}
                 <div className="flex flex-col gap-[8px]">
-                    <label className="font-urbanist font-semibold text-[16px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
+                    <label className="font-inter font-semibold text-[16px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
                         Title
                     </label>
                     <input
@@ -175,20 +175,20 @@ export default function AddAnnouncementModal({ isOpen, onClose, announcement }: 
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="Masjid Maintanence Work Tomorrow"
-                        className="w-full h-[48px] px-[21px] border border-[var(--border-01)] rounded-[12px] font-urbanist font-normal text-[16px] text-[var(--grey-800)] placeholder:text-[#666d80] focus:outline-none focus:ring-1 focus:ring-[var(--brand)]"
+                        className="w-full h-[48px] px-[21px] border border-[var(--border-01)] rounded-[12px] font-inter font-normal text-[16px] text-[var(--grey-800)] placeholder:text-[#666d80] focus:outline-none focus:ring-1 focus:ring-[var(--brand)]"
                     />
                 </div>
 
                 {/* Message Field */}
                 <div className="flex flex-col gap-[8px]">
-                    <label className="font-urbanist font-semibold text-[16px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
+                    <label className="font-inter font-semibold text-[16px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
                         Message
                     </label>
                     <textarea
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         placeholder="Please note that the masjid will undego light maintanence tomorrow from 10 AM to 1 PM. Prayer halls will remain accessiblw"
-                        className="w-full h-[168px] px-[21px] py-[16px] border border-[var(--border-01)] rounded-[12px] font-urbanist font-normal text-[16px] text-[var(--grey-800)] placeholder:text-[#666d80] focus:outline-none focus:ring-1 focus:ring-[var(--brand)] resize-none"
+                        className="w-full h-[168px] px-[21px] py-[16px] border border-[var(--border-01)] rounded-[12px] font-inter font-normal text-[16px] text-[var(--grey-800)] placeholder:text-[#666d80] focus:outline-none focus:ring-1 focus:ring-[var(--brand)] resize-none"
                     />
                 </div>
 
@@ -197,20 +197,20 @@ export default function AddAnnouncementModal({ isOpen, onClose, announcement }: 
                     <div className="flex gap-[24px]">
                         {/* Date */}
                         <div className="flex-1 flex flex-col gap-[8px]">
-                            <label className="font-urbanist font-semibold text-[16px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
+                            <label className="font-inter font-semibold text-[16px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
                                 Date
                             </label>
                             <input
                                 type="date"
                                 value={scheduleDate}
                                 onChange={(e) => setScheduleDate(e.target.value)}
-                                className="w-full h-[48px] px-[21px] border border-[var(--border-01)] rounded-[12px] font-urbanist font-normal text-[16px] text-[var(--grey-800)] placeholder:text-[#666d80] focus:outline-none focus:ring-1 focus:ring-[var(--brand)] appearance-none"
+                                className="w-full h-[48px] px-[21px] border border-[var(--border-01)] rounded-[12px] font-inter font-normal text-[16px] text-[var(--grey-800)] placeholder:text-[#666d80] focus:outline-none focus:ring-1 focus:ring-[var(--brand)] appearance-none"
                                 style={{ colorScheme: 'light' }}
                             />
                         </div>
                         {/* Time */}
                         <div className="flex-1 flex flex-col gap-[8px]">
-                            <label className="font-urbanist font-semibold text-[16px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
+                            <label className="font-inter font-semibold text-[16px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
                                 Time
                             </label>
                             <TimePicker
@@ -223,7 +223,7 @@ export default function AddAnnouncementModal({ isOpen, onClose, announcement }: 
                 )}
 
                 {/* Note */}
-                <p className="font-urbanist font-normal text-[12px] text-[#666d80] leading-normal">
+                <p className="font-inter font-normal text-[12px] text-[#666d80] leading-normal">
                     {scheduleMode
                         ? "*When you Save the date & Time it'll Automatically send the mesage on the schedule time**"
                         : '*When you publish the event in goes live in the Mobile App**'}
@@ -233,7 +233,7 @@ export default function AddAnnouncementModal({ isOpen, onClose, announcement }: 
                 <div className="flex items-center justify-end gap-[24px]">
                     <button
                         onClick={handleCancel}
-                        className="h-[44px] px-[24px] flex items-center justify-center border border-[var(--border-01)] rounded-[12px] font-urbanist font-medium text-[16px] text-[var(--grey-800)] text-center hover:bg-gray-50 transition-colors"
+                        className="h-[44px] px-[24px] flex items-center justify-center border border-[var(--border-01)] rounded-[12px] font-inter font-medium text-[16px] text-[var(--grey-800)] text-center hover:bg-gray-50 transition-colors"
                     >
                         Cancel
                     </button>
@@ -241,7 +241,7 @@ export default function AddAnnouncementModal({ isOpen, onClose, announcement }: 
                         /* Schedule mode: just Save */
                         <button
                             onClick={handleSave}
-                            className="h-[44px] px-[24px] flex items-center justify-center bg-[var(--brand)] rounded-[12px] font-urbanist font-medium text-[16px] text-white text-center hover:bg-[#065d29] transition-colors"
+                            className="h-[44px] px-[24px] flex items-center justify-center bg-[var(--brand)] rounded-[12px] font-inter font-medium text-[16px] text-white text-center hover:bg-[#065d29] transition-colors"
                         >
                             Save
                         </button>
@@ -250,13 +250,13 @@ export default function AddAnnouncementModal({ isOpen, onClose, announcement }: 
                         <div className="flex items-center gap-[24px]">
                             <button
                                 onClick={handleScheduleClick}
-                                className="h-[44px] px-[24px] flex items-center justify-center border border-[var(--border-01)] rounded-[12px] font-urbanist font-medium text-[16px] text-[var(--grey-800)] text-center hover:bg-gray-50 transition-colors"
+                                className="h-[44px] px-[24px] flex items-center justify-center border border-[var(--border-01)] rounded-[12px] font-inter font-medium text-[16px] text-[var(--grey-800)] text-center hover:bg-gray-50 transition-colors"
                             >
                                 Schedule
                             </button>
                             <button
                                 onClick={handleSend}
-                                className="h-[44px] px-[24px] flex items-center justify-center bg-[var(--brand)] rounded-[12px] font-urbanist font-medium text-[16px] text-white text-center hover:bg-[#065d29] transition-colors"
+                                className="h-[44px] px-[24px] flex items-center justify-center bg-[var(--brand)] rounded-[12px] font-inter font-medium text-[16px] text-white text-center hover:bg-[#065d29] transition-colors"
                             >
                                 Send Now
                             </button>

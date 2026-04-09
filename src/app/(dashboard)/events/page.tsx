@@ -10,7 +10,8 @@ import {
     ChevronDownIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
-} from '@/components/ui/Icons';
+    ContentSwitcher,
+} from '@/components/ui';
 import type { Event as EventType, Announcement } from '@/types';
 import CalendarView from '@/components/dashboard/CalendarView';
 import AddEventModal from '@/components/dashboard/AddEventModal';
@@ -299,43 +300,7 @@ export default function EventsPage() {
     const announcementsRangeStart = announcementsPagination.totalElements === 0 ? 0 : (announcementsPage - 1) * announcementsPagination.size + 1;
     const announcementsRangeEnd = Math.min(announcementsPage * announcementsPagination.size, announcementsPagination.totalElements);
 
-    // TEMP: Mock data for UI testing only
-    const MOCK_EVENTS = [
-        {
-            id: 'mock-1',
-            title: 'Friday Community Gathering',
-            date: '17 Oct 2025',
-            startTime: '09:00 AM',
-            timeStatus: 'Upcoming',
-            status: 'published',
-        },
-        {
-            id: 'mock-2',
-            title: 'Friday Client Presentation',
-            date: '19 Oct 2025',
-            startTime: '02:00 PM',
-            timeStatus: 'Ongoing',
-            status: 'published',
-        },
-        {
-            id: 'mock-3',
-            title: 'Monday Team Sync',
-            date: '17 Oct 2025',
-            startTime: '09:00 AM',
-            timeStatus: 'Past',
-            status: 'published',
-        }
-    ];
-
-    const isMocking = events.length === 0 && !eventsLoading;
-    
-    const filteredMockEvents = MOCK_EVENTS.filter(event => {
-        const matchesStatus = activeFilter === 'All' || event.status.toLowerCase() === activeFilter.toLowerCase();
-        const matchesTime = timeFilter === 'ALL' || event.timeStatus === timeFilter;
-        return matchesStatus && matchesTime;
-    });
-
-    const displayEvents = isMocking ? filteredMockEvents : events;
+    const displayEvents = events;
     const showEmptyState = displayEvents.length === 0 && !eventsLoading;
 
     return (
@@ -343,7 +308,7 @@ export default function EventsPage() {
             {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-[24px] font-urbanist font-semibold text-[var(--grey-800)] leading-normal">
+                    <h1 className="text-[24px] font-inter font-semibold text-[var(--grey-800)] leading-normal">
                         Event & Announcements
                     </h1>
                 </div>
@@ -359,34 +324,14 @@ export default function EventsPage() {
             </div>
 
             {/* Tabs */}
-            <div className="flex items-center bg-[rgba(7,119,52,0.05)] w-full">
-                <button
-                    onClick={() => setActiveTab('events')}
-                    className={`
-                        w-[250px] flex items-center justify-center px-[16px] py-[16px]
-                        font-['Inter'] text-[18px] leading-[22px] outline-none transition-all duration-300
-                        ${activeTab === 'events'
-                            ? 'text-[var(--brand)] font-semibold border-b-2 border-solid border-[var(--brand)]'
-                            : 'text-[#36394a] font-normal border-b-2 border-solid border-transparent'
-                        }
-                    `}
-                >
-                    Events
-                </button>
-                <button
-                    onClick={() => setActiveTab('announcements')}
-                    className={`
-                        w-[250px] flex items-center justify-center px-[16px] py-[16px]
-                        font-['Inter'] text-[18px] leading-[22px] outline-none transition-all duration-300
-                        ${activeTab === 'announcements'
-                            ? 'text-[var(--brand)] font-semibold border-b-2 border-solid border-[var(--brand)]'
-                            : 'text-[#36394a] font-normal border-b-2 border-solid border-transparent'
-                        }
-                    `}
-                >
-                    Announcements
-                </button>
-            </div>
+            <ContentSwitcher
+                tabs={[
+                    { id: 'events', label: 'Events' },
+                    { id: 'announcements', label: 'Announcements' }
+                ]}
+                activeTab={activeTab}
+                onChange={(tabId) => setActiveTab(tabId as 'events' | 'announcements')}
+            />
 
 
             {/* Content Area */}
@@ -402,7 +347,7 @@ export default function EventsPage() {
                                             key={filter}
                                             onClick={() => { setActiveFilter(filter as any); setEventsPage(1); }}
                                             className={`
-                                        h-[40px] px-[16px] py-[10px] font-urbanist text-[14px] 
+                                        h-[40px] px-[16px] py-[10px] font-inter text-[14px] 
                                         border border-[var(--border-01)]
                                         transition-all duration-200 flex items-center justify-center gap-[8px]
                                         ${activeFilter === filter ? 'font-bold text-white bg-[var(--brand)] z-10 hover:bg-[#065d29]' : 'font-normal text-[var(--grey-800)] bg-white hover:bg-[rgba(7,119,52,0.05)] hover:text-[var(--brand)]'}
@@ -475,7 +420,7 @@ export default function EventsPage() {
                                             placeholder="Search Events"
                                             value={searchQuery}
                                             onChange={(e) => { setSearchQuery(e.target.value); setEventsPage(1); }}
-                                            className="w-full h-full pl-[38px] pr-[14px] border border-[var(--border-01)] rounded-[11px] font-urbanist text-[12px] text-[#666d80] placeholder-[#666d80] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 focus:border-[var(--brand)] transition-all"
+                                            className="w-full h-full pl-[38px] pr-[14px] border border-[var(--border-01)] rounded-[11px] font-inter text-[12px] text-[#666d80] placeholder-[#666d80] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 focus:border-[var(--brand)] transition-all"
                                         />
                                         <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-[var(--grey-100)]">
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -534,10 +479,10 @@ export default function EventsPage() {
                                 <table className="w-full text-left border-collapse">
                                     <thead className="bg-[#fafbfb] border-b border-t border-[var(--border-01)] h-[48px]">
                                         <tr>
-                                            <th className="px-[16px] py-[14px] font-urbanist font-medium text-[12px] text-[#666d80] uppercase">Title</th>
-                                            <th className="px-[16px] py-[14px] font-urbanist font-medium text-[12px] text-[#666d80] uppercase">Date & Time</th>
-                                            <th className="px-[16px] py-[14px] font-urbanist font-medium text-[12px] text-[#666d80] uppercase">Status</th>
-                                            <th className="px-[16px] py-[14px] font-urbanist font-medium text-[12px] text-[#666d80] uppercase">Action</th>
+                                            <th className="px-[16px] py-[14px] font-inter font-medium text-[12px] text-[#666d80] uppercase">Title</th>
+                                            <th className="px-[16px] py-[14px] font-inter font-medium text-[12px] text-[#666d80] uppercase">Date & Time</th>
+                                            <th className="px-[16px] py-[14px] font-inter font-medium text-[12px] text-[#666d80] uppercase">Status</th>
+                                            <th className="px-[16px] py-[14px] font-inter font-medium text-[12px] text-[#666d80] uppercase">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-none bg-white">
@@ -567,7 +512,7 @@ export default function EventsPage() {
                                                 ${event.status?.toLowerCase() === 'draft' ? 'text-[#ffad0d] border-[#ffc62b]' : ''}
                                                 ${event.status?.toLowerCase() === 'completed' ? 'text-[#47b881] border-[#6bc497]' : ''}
                                             `}
-                                                        style={{ fontFamily: "'Inter Tight', sans-serif" }}
+                                                        style={{ fontFamily: "'Inter', sans-serif" }}
                                                     >
                                                         {event.status?.toLowerCase() === 'draft' ? 'Drafts' : event.status}
                                                     </span>
@@ -596,15 +541,15 @@ export default function EventsPage() {
 
                                 {/* Pagination Footer */}
                                 <div className="flex items-center justify-between h-[40px] px-0 mt-0 border-t border-[var(--border-01)] bg-white relative w-full">
-                                    <p className="absolute left-0 top-[10px] font-dm-sans text-[14px] text-[#666d80]">
-                                        {isMocking ? `${displayEvents.length > 0 ? 1 : 0}-${displayEvents.length} of ${displayEvents.length} items` : `${eventsRangeStart}-${eventsRangeEnd} of ${eventsPagination.totalElements} items`}
+                                    <p className="absolute left-0 top-[10px] font-inter text-[14px] text-[#666d80]">
+                                        {`${eventsRangeStart}-${eventsRangeEnd} of ${eventsPagination.totalElements} items`}
                                     </p>
                                     <div className="absolute right-[64px] top-[8px] flex items-center gap-[8px]">
                                         <div className="bg-white h-[23px] px-[11px] rounded-[8px] flex items-center justify-center gap-[8px] cursor-pointer">
-                                            <span className="font-dm-sans text-[14px] text-[#666d80]">{eventsPage}</span>
+                                            <span className="font-inter text-[14px] text-[#666d80]">{eventsPage}</span>
                                             <ChevronDownIcon size={16} className="text-[#666d80]" />
                                         </div>
-                                        <span className="font-dm-sans text-[14px] text-[#666d80]">of {eventsPagination.totalPages} pages</span>
+                                        <span className="font-inter text-[14px] text-[#666d80]">of {eventsPagination.totalPages} pages</span>
                                     </div>
                                     <div className="absolute right-0 top-1/2 -translate-y-[calc(50%-0.5px)] flex items-center gap-[8px]">
                                         <button
@@ -648,7 +593,7 @@ export default function EventsPage() {
                                     key={filter}
                                     onClick={() => { setAnnouncementFilter(filter); setAnnouncementsPage(1); }}
                                     className={`
-                                        h-[40px] px-[16px] py-[10px] font-urbanist text-[14px] 
+                                        h-[40px] px-[16px] py-[10px] font-inter text-[14px] 
                                         border border-[var(--border-01)]
                                         transition-all duration-200 flex items-center justify-center gap-[8px]
                                         ${announcementFilter === filter ? 'font-bold text-white bg-[var(--brand)] z-10 hover:bg-[#065d29]' : 'font-normal text-[var(--grey-800)] bg-white hover:bg-[rgba(7,119,52,0.05)] hover:text-[var(--brand)]'}
@@ -724,7 +669,7 @@ export default function EventsPage() {
                                     placeholder="Search announcements"
                                     value={announcementSearchQuery}
                                     onChange={(e) => { setAnnouncementSearchQuery(e.target.value); setAnnouncementsPage(1); }}
-                                    className="w-full h-full pl-[38px] pr-[14px] border border-[var(--border-01)] rounded-[11px] font-urbanist text-[12px] text-[#666d80] placeholder-[#666d80] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 focus:border-[var(--brand)] transition-all"
+                                    className="w-full h-full pl-[38px] pr-[14px] border border-[var(--border-01)] rounded-[11px] font-inter text-[12px] text-[#666d80] placeholder-[#666d80] focus:outline-none focus:ring-2 focus:ring-[var(--brand)]/20 focus:border-[var(--brand)] transition-all"
                                 />
                                 <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-[var(--grey-100)]">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -738,23 +683,23 @@ export default function EventsPage() {
                         <table className="w-full text-left border-collapse">
                             <thead className="bg-[#fafbfb] border-b border-t border-[var(--border-01)] h-[48px]">
                                 <tr>
-                                    <th className="px-[16px] py-[14px] font-urbanist font-medium text-[12px] text-[#666d80] uppercase">Title</th>
-                                    <th className="px-[16px] py-[14px] font-urbanist font-medium text-[12px] text-[#666d80] uppercase">Message</th>
-                                    <th className="px-[16px] py-[14px] font-urbanist font-medium text-[12px] text-[#666d80] uppercase">Date Sent</th>
-                                    <th className="px-[16px] py-[14px] font-urbanist font-medium text-[12px] text-[#666d80] uppercase">Status</th>
-                                    <th className="px-[16px] py-[14px] font-urbanist font-medium text-[12px] text-[#666d80] uppercase">Action</th>
+                                    <th className="px-[16px] py-[14px] font-inter font-medium text-[12px] text-[#666d80] uppercase">Title</th>
+                                    <th className="px-[16px] py-[14px] font-inter font-medium text-[12px] text-[#666d80] uppercase">Message</th>
+                                    <th className="px-[16px] py-[14px] font-inter font-medium text-[12px] text-[#666d80] uppercase">Date Sent</th>
+                                    <th className="px-[16px] py-[14px] font-inter font-medium text-[12px] text-[#666d80] uppercase">Status</th>
+                                    <th className="px-[16px] py-[14px] font-inter font-medium text-[12px] text-[#666d80] uppercase">Action</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-none bg-white">
                                 {announcements.map((announcement) => (
                                         <tr key={announcement.id} className="group hover:bg-[#fafbfb] transition-colors duration-150">
-                                            <td className="h-[70px] px-[16px] py-[22px] font-urbanist font-medium text-[14px] text-[#666d80]">
+                                            <td className="h-[70px] px-[16px] py-[22px] font-inter font-medium text-[14px] text-[#666d80]">
                                                 {announcement.title}
                                             </td>
-                                            <td className="h-[70px] px-[16px] py-[22px] font-urbanist font-medium text-[14px] text-[#666d80] truncate max-w-[200px]" title={announcement.message || announcement.description}>
+                                            <td className="h-[70px] px-[16px] py-[22px] font-inter font-medium text-[14px] text-[#666d80] truncate max-w-[200px]" title={announcement.message || announcement.description}>
                                                 {announcement.message || announcement.description}
                                             </td>
-                                            <td className="h-[70px] px-[16px] py-[22px] font-urbanist font-medium text-[14px] text-[#666d80] whitespace-nowrap">
+                                            <td className="h-[70px] px-[16px] py-[22px] font-inter font-medium text-[14px] text-[#666d80] whitespace-nowrap">
                                                 {announcement.date}  {announcement.time}
                                             </td>
                                             <td className="h-[70px] px-[16px] py-[22px]">
@@ -764,7 +709,7 @@ export default function EventsPage() {
                                                             ? 'text-[#ff8156] border-[#ffa487]'
                                                             : 'text-[#47b881] border-[#6bc497]'
                                                         }`}
-                                                    style={{ fontFamily: '"Inter Tight", sans-serif' }}
+                                                    style={{ fontFamily: '"Inter", sans-serif' }}
                                                 >
                                                     {announcement.status === 'scheduled' ? 'Scheduled' : 'Sent'}
                                                 </span>
