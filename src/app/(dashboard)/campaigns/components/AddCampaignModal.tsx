@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import Modal from '@/components/ui/Modal';
-import { ChevronDownIcon, CloseIcon, MegaphoneIcon } from '@/components/ui/Icons';
+import { ChevronDownIcon, MegaphoneIcon } from '@/components/ui/Icons';
+import ModalCloseButton from '@/components/ui/ModalCloseButton';
 import Input from '@/components/ui/Input';
 import { createCampaign } from '@/lib/api/campaigns';
 
@@ -90,9 +91,7 @@ export default function AddCampaignModal({ isOpen, onClose, onCreated }: AddCamp
         <>
           <div className="flex items-center justify-between p-[24px] border-b border-[var(--border-01)]">
             <h2 className="text-[20px] font-semibold text-[var(--grey-800)] font-inter">Add New Campaign</h2>
-            <button type="button" onClick={handleClose} className="p-1 hover:bg-[var(--neutral-100)] rounded-[8px] transition-colors text-[var(--neutral-500)]">
-              <CloseIcon size={20} />
-            </button>
+            <ModalCloseButton onClick={handleClose} />
           </div>
           <form className="p-[24px] flex flex-col gap-[24px]" onSubmit={handleFormSubmit}>
 

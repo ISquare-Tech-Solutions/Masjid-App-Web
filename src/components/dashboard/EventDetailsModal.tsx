@@ -1,6 +1,6 @@
-import { useState } from 'react';
 import Modal from '@/components/ui/Modal';
-import { CloseIcon, EditIcon } from '@/components/ui/Icons';
+import { EditIcon } from '@/components/ui/Icons';
+import ModalCloseButton from '@/components/ui/ModalCloseButton';
 import type { Event } from '@/types';
 
 interface EventDetailsModalProps {
@@ -8,47 +8,28 @@ interface EventDetailsModalProps {
     onClose: () => void;
     event: Event | null;
     onEdit: (event: Event) => void;
-    onDelete?: (id: string) => Promise<void>;
+    onCancelRequest?: (event: Event) => void;
 }
 
-export default function EventDetailsModal({ isOpen, onClose, event, onEdit, onDelete }: EventDetailsModalProps) {
-    const [isDeleting, setIsDeleting] = useState(false);
-
+export default function EventDetailsModal({ isOpen, onClose, event, onEdit, onCancelRequest }: EventDetailsModalProps) {
     if (!event) return null;
 
-    const handleDelete = async () => {
-        if (!onDelete || !event.id) return;
-        
-        // Confirm before applying the delete action
-        if (!window.confirm("Are you sure you want to delete this event?")) return;
+    const isCancelled = event.status?.toLowerCase() === 'cancelled';
 
-        setIsDeleting(true);
-        try {
-            await onDelete(event.id);
-            onClose();
-        } catch (error) {
-            console.error("Failed to delete event:", error);
-            alert("Failed to delete the event. It might not be in a deletable state.");
-        } finally {
-            setIsDeleting(false);
-        }
+    const handleCancel = () => {
+        if (!onCancelRequest || !event.id) return;
+        onCancelRequest(event);
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} className="max-w-[800px] p-0 overflow-hidden">
+        <Modal isOpen={isOpen} onClose={onClose} className="max-w-[680px] p-0 overflow-hidden">
             <div className="p-6 space-y-6">
                 {/* Header */}
                 <div className="flex justify-between items-start">
                     <h2 className="text-[24px] font-bold font-inter text-[var(--grey-800)]">
                         Event Details
                     </h2>
-                    <button 
-                        onClick={onClose} 
-                        className="p-2 bg-[rgba(7,119,52,0.1)] rounded-[8px] hover:bg-[rgba(7,119,52,0.2)] transition-colors"
-                        disabled={isDeleting}
-                    >
-                        <CloseIcon size={20} className="text-[var(--brand)]" />
-                    </button>
+                    <ModalCloseButton onClick={onClose} />
                 </div>
 
                 {/* Details Grid */}
@@ -125,29 +106,28 @@ export default function EventDetailsModal({ isOpen, onClose, event, onEdit, onDe
 
                 {/* Footer Buttons */}
                 <div className="flex justify-end gap-6 pt-4 border-t border-gray-100">
-                    {onDelete && (
-                         <button
-                         onClick={handleDelete}
-                         disabled={isDeleting}
-                         className="flex items-center gap-2 h-[44px] px-[24px] border border-red-200 text-red-600 rounded-[12px] text-[16px] font-medium font-inter hover:bg-red-50 transition-colors mr-auto"
-                     >
-                         {isDeleting ? 'Deleting...' : 'Delete'}
-                     </button>
+                    {onCancelRequest && !isCancelled && (
+                        <button
+                            onClick={handleCancel}
+                            className="flex items-center gap-2 h-[44px] px-[24px] border border-red-200 text-red-600 rounded-[12px] text-[16px] font-medium font-inter hover:bg-red-50 transition-colors mr-auto"
+                        >
+                            Cancel Event
+                        </button>
+                    )}
+
+                    {!isCancelled && (
+                        <button
+                            onClick={() => onEdit(event)}
+                            className="flex items-center gap-2 h-[44px] px-[24px] border border-[var(--border-01)] rounded-[12px] text-[16px] font-medium font-inter text-[#4b4b4b] hover:bg-gray-50 transition-colors"
+                        >
+                            <EditIcon size={20} />
+                            Edit
+                        </button>
                     )}
 
                     <button
-                        onClick={() => onEdit(event)}
-                        disabled={isDeleting}
-                        className="flex items-center gap-2 h-[44px] px-[24px] border border-[var(--border-01)] rounded-[12px] text-[16px] font-medium font-inter text-[#4b4b4b] hover:bg-gray-50 transition-colors"
-                    >
-                        <EditIcon size={20} />
-                        Edit
-                    </button>
-
-                    <button
                         onClick={onClose}
-                        disabled={isDeleting}
-                        className="h-[44px] px-[24px] bg-[var(--brand)] rounded-[12px] text-[16px] font-medium font-inter text-white hover:bg-[var(--brand-06)] transition-colors shadow-sm"
+                        className="h-[44px] px-[24px] bg-[var(--brand)] rounded-[12px] text-[16px] font-medium font-inter text-white hover:bg-[#065d29] transition-colors shadow-sm"
                     >
                         Close
                     </button>

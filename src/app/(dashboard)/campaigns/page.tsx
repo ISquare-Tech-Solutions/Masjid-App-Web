@@ -13,7 +13,11 @@ export default function CampaignsPage() {
   const [stats, setStats] = useState<CampaignStats>({ activeCampaigns: 0, totalDonors: 0, raisedThisMonth: 0, totalRaised: 0 });
 
   useEffect(() => {
-    getCampaignStats().then(setStats).catch(console.error);
+    getCampaignStats()
+      .then(setStats)
+      .catch((err: any) => {
+        console.warn('Campaign stats unavailable:', err?.message || err);
+      });
   }, [tableKey]);
 
   const formatCurrency = (amount: number) =>

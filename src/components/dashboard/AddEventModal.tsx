@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
-import { CloseIcon, CalendarIcon, UploadIcon } from '@/components/ui/Icons';
+import { UploadIcon } from '@/components/ui/Icons';
+import ModalCloseButton from '@/components/ui/ModalCloseButton';
 import TimePicker from '@/components/ui/TimePicker';
 import type { Event } from '@/types';
 import { createEvent, updateEvent } from '@/lib/api/events';
@@ -24,6 +25,15 @@ function parseTime12to24(t: string): string {
     return `${h.toString().padStart(2, '0')}:${m}`;
 }
 
+/* ── Helper: get today's date in YYYY-MM-DD local time ── */
+function getLocalTodayDateString(): string {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 export default function AddEventModal({ isOpen, onClose, event }: AddEventModalProps) {
     const isEditMode = !!event;
 
@@ -36,7 +46,7 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
     const [startTime, setStartTime] = useState(''); // HH:MM
     const [endTime, setEndTime] = useState('');     // HH:MM
     const [link, setLink] = useState('');
-    
+
     // Image Upload State
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imageName, setImageName] = useState('');
@@ -67,7 +77,7 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
                 setStartTime(parseTime12to24(event.startTime || ''));
                 setEndTime(parseTime12to24(event.endTime || '')); // currently unused by backend
                 setLink(event.link || '');
-                
+
                 setImageFile(null);
                 setImageName(event.images && event.images.length > 0 ? 'Existing Image Attached' : '');
             } else {
@@ -75,7 +85,7 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
                 setSpeaker('');
                 setVenue('');
                 setDescription('');
-                setEventDate('');
+                setEventDate(getLocalTodayDateString());
                 setStartTime('');
                 setEndTime('');
                 setLink('');
@@ -86,8 +96,14 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
     }, [isOpen, event]);
 
     const handleSave = async (asDraft?: boolean) => {
-        if (!title || !eventDate || !description) {
-            setError("Title, Date, and Description are required fields.");
+        if (!title || !eventDate || !description || !speaker || !venue) {
+            setError("Title, Speaker, Venue, Date, and Description are required fields.");
+            return;
+        }
+
+        const todayStr = getLocalTodayDateString();
+        if (eventDate < todayStr) {
+            setError("Event date cannot be in the past.");
             return;
         }
 
@@ -101,12 +117,12 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
             const isoDateTime = `${eventDate}T${timePart}Z`;
 
             const formData = new FormData();
-            
+
             // Required DTO fields
             formData.append('title', title);
             formData.append('date', isoDateTime);
             formData.append('description', description);
-            
+
             // The backend expects specific string enums (matching UI or backend statuses)
             // Default "Publish" = 'published' vs "Draft" = 'draft'
             formData.append('status', asDraft ? 'draft' : 'published');
@@ -115,7 +131,7 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
             if (speaker) formData.append('speaker', speaker);
             if (venue) formData.append('venue', venue);
             if (link) formData.append('link', link);
-            
+
             // Append Image
             if (imageFile) {
                 formData.append('images', imageFile);
@@ -137,30 +153,24 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} className="max-w-[800px] p-0">
-            <div className="bg-white rounded-[24px] p-[24px] flex flex-col gap-[24px] max-h-[90vh] overflow-y-auto">
+            <div className="bg-white border border-[var(--border-01)] rounded-[24px] p-[24px] flex flex-col gap-[24px]">
                 {/* Header */}
                 <div className="flex justify-between items-start">
                     <h2 className="font-inter font-bold text-[24px] text-[var(--grey-800)] leading-normal">
                         {isEditMode ? 'Update Event Information' : 'Add New Event'}
                     </h2>
-                    <button
-                        onClick={onClose}
-                        className="w-[36px] h-[36px] flex items-center justify-center bg-[rgba(7,119,52,0.1)] rounded-[8px] hover:bg-[rgba(7,119,52,0.2)] transition-colors shrink-0"
-                        disabled={isSaving}
-                    >
-                        <CloseIcon size={24} className="text-[var(--grey-800)]" />
-                    </button>
+                    <ModalCloseButton onClick={onClose} disabled={isSaving} />
                 </div>
-                
+
                 {error && (
-                    <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+                    <div className="bg-red-50 text-red-600 p-3 rounded-[12px] text-sm">
                         {error}
                     </div>
                 )}
 
                 {/* Event Title */}
                 <div className="flex flex-col gap-[8px]">
-                    <label className="font-inter font-semibold text-[16px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
+                    <label className="font-inter font-semibold text-[14px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
                         Event Title
                     </label>
                     <input
@@ -168,7 +178,7 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="Title"
-                        className="w-full h-[48px] px-[21px] border border-[var(--border-01)] rounded-[12px] font-inter font-normal text-[16px] text-[var(--grey-800)] placeholder:text-[#666d80] focus:outline-none focus:ring-1 focus:ring-[var(--brand)]"
+                        className="w-full h-[44px] px-[12px] border border-[var(--border-01)] rounded-[12px] font-inter font-normal text-[14px] text-[var(--grey-800)] placeholder:text-[#666d80] focus:outline-none focus:ring-1 focus:ring-[var(--brand)]"
                     />
                 </div>
 
@@ -176,7 +186,7 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
                 <div className="flex gap-[24px]">
                     {/* Speaker */}
                     <div className="flex-1 flex flex-col gap-[8px]">
-                        <label className="font-inter font-semibold text-[16px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
+                        <label className="font-inter font-semibold text-[14px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
                             Speaker
                         </label>
                         <input
@@ -184,12 +194,12 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
                             value={speaker}
                             onChange={(e) => setSpeaker(e.target.value)}
                             placeholder="Speaker"
-                            className="w-full h-[48px] px-[21px] border border-[var(--border-01)] rounded-[12px] font-inter font-normal text-[16px] text-[var(--grey-800)] placeholder:text-[#666d80] focus:outline-none focus:ring-1 focus:ring-[var(--brand)]"
+                            className="w-full h-[44px] px-[12px] border border-[var(--border-01)] rounded-[12px] font-inter font-normal text-[14px] text-[var(--grey-800)] placeholder:text-[#666d80] focus:outline-none focus:ring-1 focus:ring-[var(--brand)]"
                         />
                     </div>
                     {/* Venue */}
                     <div className="flex-1 flex flex-col gap-[8px]">
-                        <label className="font-inter font-semibold text-[16px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
+                        <label className="font-inter font-semibold text-[14px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
                             Venue
                         </label>
                         <input
@@ -197,21 +207,21 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
                             value={venue}
                             onChange={(e) => setVenue(e.target.value)}
                             placeholder="Link"
-                            className="w-full h-[48px] px-[21px] border border-[var(--border-01)] rounded-[12px] font-inter font-normal text-[16px] text-[var(--grey-800)] placeholder:text-[#666d80] focus:outline-none focus:ring-1 focus:ring-[var(--brand)]"
+                            className="w-full h-[44px] px-[12px] border border-[var(--border-01)] rounded-[12px] font-inter font-normal text-[14px] text-[var(--grey-800)] placeholder:text-[#666d80] focus:outline-none focus:ring-1 focus:ring-[var(--brand)]"
                         />
                     </div>
                 </div>
 
                 {/* Description */}
                 <div className="flex flex-col gap-[8px]">
-                    <label className="font-inter font-semibold text-[16px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
+                    <label className="font-inter font-semibold text-[14px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
                         Description
                     </label>
                     <textarea
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Description"
-                        className="w-full h-[144px] px-[21px] py-[16px] border border-[var(--border-01)] rounded-[12px] font-inter font-normal text-[16px] text-[var(--grey-800)] placeholder:text-[#666d80] focus:outline-none focus:ring-1 focus:ring-[var(--brand)] resize-none"
+                        className="w-full h-[144px] px-[12px] py-[12px] border border-[var(--border-01)] rounded-[12px] font-inter font-normal text-[14px] text-[var(--grey-800)] placeholder:text-[#666d80] focus:outline-none focus:ring-1 focus:ring-[var(--brand)] resize-none"
                     />
                 </div>
 
@@ -219,22 +229,23 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
                 <div className="flex gap-[24px]">
                     {/* Date */}
                     <div className="flex-1 flex flex-col gap-[8px]">
-                        <label className="font-inter font-semibold text-[16px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
+                        <label className="font-inter font-semibold text-[14px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
                             Date
                         </label>
                         <div className="relative">
                             <input
                                 type="date"
+                                min={getLocalTodayDateString()}
                                 value={eventDate}
                                 onChange={(e) => setEventDate(e.target.value)}
-                                className="w-full h-[48px] px-[21px] border border-[var(--border-01)] rounded-[12px] font-inter font-normal text-[16px] text-[var(--grey-800)] placeholder:text-[#666d80] focus:outline-none focus:ring-1 focus:ring-[var(--brand)] appearance-none"
+                                className="w-full h-[44px] px-[12px] border border-[var(--border-01)] rounded-[12px] font-inter font-normal text-[16px] text-[var(--grey-800)] focus:outline-none focus:ring-1 focus:ring-[var(--brand)] appearance-none"
                                 style={{ colorScheme: 'light' }}
                             />
                         </div>
                     </div>
                     {/* Start Time */}
                     <div className="flex-1 flex flex-col gap-[8px]">
-                        <label className="font-inter font-semibold text-[16px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
+                        <label className="font-inter font-semibold text-[14px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
                             Start Time
                         </label>
                         <TimePicker
@@ -245,7 +256,7 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
                     </div>
                     {/* End Time */}
                     <div className="flex-1 flex flex-col gap-[8px]">
-                        <label className="font-inter font-semibold text-[16px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
+                        <label className="font-inter font-semibold text-[14px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
                             End Time
                         </label>
                         <TimePicker
@@ -260,7 +271,7 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
                 <div className="flex gap-[24px]">
                     {/* Registration Link */}
                     <div className="flex-1 flex flex-col gap-[8px]">
-                        <label className="font-inter font-semibold text-[16px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
+                        <label className="font-inter font-semibold text-[14px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
                             Registration Link <span className="font-inter font-normal">(Optional)</span>
                         </label>
                         <input
@@ -268,30 +279,30 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
                             value={link}
                             onChange={(e) => setLink(e.target.value)}
                             placeholder="Link"
-                            className="w-full h-[48px] px-[21px] border border-[var(--border-01)] rounded-[12px] font-inter font-normal text-[16px] text-[var(--grey-800)] placeholder:text-[#666d80] focus:outline-none focus:ring-1 focus:ring-[var(--brand)]"
+                            className="w-full h-[44px] px-[12px] border border-[var(--border-01)] rounded-[12px] font-inter font-normal text-[14px] text-[var(--grey-800)] placeholder:text-[#666d80] focus:outline-none focus:ring-1 focus:ring-[var(--brand)]"
                         />
                     </div>
                     {/* Upload Image */}
                     <div className="flex-1 flex flex-col gap-[8px]">
-                        <label className="font-inter font-semibold text-[16px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
+                        <label className="font-inter font-semibold text-[14px] text-[var(--grey-800)] tracking-[0.16px] leading-none">
                             Upload Image <span className="font-inter font-normal">(Optional)</span>
                         </label>
                         {imageName ? (
-                            <div className="flex items-center w-full h-[48px] px-[21px] border border-[var(--border-01)] rounded-[12px] bg-white overflow-hidden">
-                                <span className="font-inter font-normal text-[16px] text-[var(--grey-800)] truncate">
+                            <div className="flex items-center w-full h-[44px] px-[12px] border border-[var(--border-01)] rounded-[12px] bg-white overflow-hidden">
+                                <span className="font-inter font-normal text-[14px] text-[var(--grey-800)] truncate">
                                     {imageName}
                                 </span>
                                 <button
                                     onClick={() => setImageName('')}
-                                    className="ml-[6px] text-[#666d80] hover:text-[var(--grey-800)] transition-colors text-[16px] leading-none shrink-0"
+                                    className="ml-[6px] text-[#666d80] hover:text-[var(--grey-800)] transition-colors text-[14px] leading-none shrink-0"
                                     type="button"
                                 >
                                     ×
                                 </button>
                             </div>
                         ) : (
-                            <label className="flex items-center justify-between w-full h-[48px] px-[21px] border border-[var(--border-01)] rounded-[12px] cursor-pointer hover:bg-gray-50 transition-colors">
-                                <span className="font-inter font-normal text-[16px] text-[#666d80]">
+                            <label className="flex items-center justify-between w-full h-[44px] px-[12px] border border-[var(--border-01)] rounded-[12px] cursor-pointer hover:bg-gray-50 transition-colors">
+                                <span className="font-inter font-normal text-[14px] text-[#666d80]">
                                     Image Upload
                                 </span>
                                 <UploadIcon className="text-[var(--grey-800)]" size={20} />
@@ -312,35 +323,38 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
                 </div>
 
                 {/* Note */}
-                <div className="font-inter font-normal text-[12px] text-[#666d80] flex flex-col w-full">
-                    <p className="leading-normal mb-0">*Publish: The event will be published and visible to users immediately*</p>
-                    <p className="leading-normal mb-0">**Save as Draft: The event will be saved as a draft and not visible to users.**</p>
+                <div className="font-inter font-normal text-[12px] text-[#666d80] flex flex-col gap-[4px] w-full">
+                    <p className="leading-normal mb-0 italic">
+                        *Publish: The event will be published and visible to users immediately*
+                    </p>
+                    <p className="leading-normal mb-0 font-normal">
+                        **Save as Draft: The event will be saved as a draft and not visible to users.**
+                    </p>
                 </div>
 
                 {/* Footer Buttons */}
-                <div className="flex items-center justify-end w-full">
-                    <div className="flex items-center gap-[16px]">
+                <div className="flex items-center justify-end gap-[12px] w-full">
+                    <button
+                        onClick={onClose}
+                        className="h-[44px] px-[24px] flex items-center justify-center bg-transparent font-inter font-medium text-[16px] text-[#36394a] text-center hover:bg-gray-50 transition-colors rounded-[12px]"
+                    >
+                        Cancel
+                    </button>
+                    {!isEditMode && (
                         <button
-                            onClick={onClose}
-                            className="h-[44px] px-[24px] flex items-center justify-center border border-[var(--border-01)] rounded-[12px] font-inter font-medium text-[16px] text-[var(--grey-800)] text-center hover:bg-gray-50 transition-colors"
+                            onClick={() => handleSave(true)}
+                            className="h-[44px] px-[24px] flex items-center justify-center border border-[var(--border-01)] bg-transparent rounded-[12px] font-inter font-medium text-[16px] text-[var(--grey-800)] text-center hover:bg-gray-50 transition-colors"
                         >
-                            Cancel
+                            Save as Draft
                         </button>
-                        {!isEditMode && (
-                            <button
-                                onClick={() => handleSave(true)}
-                                className="h-[44px] px-[24px] flex items-center justify-center border border-[var(--border-01)] rounded-[12px] font-inter font-medium text-[16px] text-[var(--grey-800)] text-center hover:bg-gray-50 transition-colors"
-                            >
-                                Save as Draft
-                            </button>
-                        )}
-                        <button
-                            onClick={() => handleSave(false)}
-                            className="h-[44px] px-[24px] flex items-center justify-center bg-[var(--brand)] rounded-[12px] font-inter font-medium text-[16px] text-white text-center hover:bg-[#065d29] transition-colors"
-                        >
-                            {isEditMode ? 'Save & Publish' : 'Publish'}
-                        </button>
-                    </div>
+                    )}
+                    <button
+                        onClick={() => handleSave(false)}
+                        className="h-[44px] px-[24px] flex items-center justify-center bg-[var(--brand)] rounded-[12px] font-inter font-medium text-[16px] text-white text-center hover:bg-[#065d29] transition-colors disabled:opacity-50"
+                        disabled={isSaving}
+                    >
+                        {isSaving ? 'Saving...' : 'Publish'}
+                    </button>
                 </div>
             </div>
         </Modal>

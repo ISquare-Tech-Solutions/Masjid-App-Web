@@ -75,7 +75,14 @@ export async function changeEventStatus(id: string, status: string): Promise<Eve
 }
 
 /**
- * Delete a draft event
+ * Cancel an event (soft-cancel — marks status as cancelled, preserves data).
+ */
+export async function cancelEvent(id: string): Promise<void> {
+    await put<void>(`/admin/events/${id}/cancel`, {});
+}
+
+/**
+ * Permanently delete a cancelled event.
  */
 export async function deleteEvent(id: string): Promise<void> {
     await del<void>(`/admin/events/${id}`);

@@ -1,7 +1,7 @@
 'use client';
 
 import Modal from '@/components/ui/Modal';
-import { CloseIcon } from '@/components/ui/Icons';
+import ModalCloseButton from '@/components/ui/ModalCloseButton';
 import type { AdminUserResponse } from '@/types/api';
 
 interface ProfileModalProps {
@@ -27,12 +27,7 @@ export default function ProfileModal({ isOpen, onClose, onLogout, user }: Profil
         {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="font-inter font-bold text-[24px] text-[#36394a]">My Profile</h2>
-          <button
-            onClick={onClose}
-            className="w-[32px] h-[32px] rounded-[8px] bg-[rgba(47,128,237,0.05)] flex items-center justify-center hover:bg-[rgba(47,128,237,0.1)] transition-colors"
-          >
-            <CloseIcon size={20} className="text-[#36394a]" />
-          </button>
+          <ModalCloseButton onClick={onClose} />
         </div>
 
         {/* Body */}

@@ -8,9 +8,10 @@ interface ModalProps {
     onClose: () => void;
     children: React.ReactNode;
     className?: string;
+    style?: React.CSSProperties;
 }
 
-export default function Modal({ isOpen, onClose, children, className = '' }: ModalProps) {
+export default function Modal({ isOpen, onClose, children, className = '', style }: ModalProps) {
     const overlayRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -43,14 +44,17 @@ export default function Modal({ isOpen, onClose, children, className = '' }: Mod
         <div
             ref={overlayRef}
             onClick={handleOverlayClick}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+            className="fixed inset-0 z-50 overflow-y-auto bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
         >
-            <div
-                className={`bg-white rounded-[24px] shadow-xl w-full max-h-[90vh] overflow-visible scrollbar-hide animate-in zoom-in-95 duration-200 ${className}`}
-                role="dialog"
-                aria-modal="true"
-            >
-                {children}
+            <div className="flex min-h-full items-center justify-center p-4">
+                <div
+                    className={`bg-white rounded-[24px] shadow-xl w-full animate-in zoom-in-95 duration-200 ${className}`}
+                    style={style}
+                    role="dialog"
+                    aria-modal="true"
+                >
+                    {children}
+                </div>
             </div>
         </div>,
         document.body
