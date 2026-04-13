@@ -5,6 +5,7 @@ import { ChevronLeftIcon, EditIcon, DownloadIcon } from '@/components/ui/Icons';
 import DonationHistoryTable from './components/DonationHistoryTable';
 import EndCampaignModal from './components/EndCampaignModal';
 import PublishCampaignModal from '../components/PublishCampaignModal';
+import EditCampaignModal from '../components/EditCampaignModal';
 import Link from 'next/link';
 import { getCampaignById, updateCampaignStatus } from '@/lib/api/campaigns';
 import { downloadDonorPdf } from '@/lib/downloadDonorPdf';
@@ -25,6 +26,7 @@ export default function CampaignDetailsPage({ params }: { params: Promise<{ id: 
   const [loading, setLoading] = useState(true);
   const [isEndModalOpen, setIsEndModalOpen] = useState(false);
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   useEffect(() => {
     getCampaignById(id)
@@ -129,13 +131,13 @@ export default function CampaignDetailsPage({ params }: { params: Promise<{ id: 
         {/* Action Buttons */}
         <div className="flex items-center justify-end gap-[16px]">
           {isEditable && (
-            <Link
-              href={`/campaigns/${id}/edit`}
+            <button
+              onClick={() => setIsEditModalOpen(true)}
               className="flex items-center gap-[8px] px-[20px] py-[10px] text-[14px] font-medium text-[var(--grey-800)] bg-white border border-[var(--border-01)] rounded-[8px] hover:bg-[var(--neutral-100)] transition-colors"
             >
               <EditIcon size={18} />
               <span>Edit Campaign</span>
-            </Link>
+            </button>
           )}
           {isPublishable && (
             <button
@@ -184,6 +186,13 @@ export default function CampaignDetailsPage({ params }: { params: Promise<{ id: 
           await updateCampaignStatus(id, 'active');
           setCampaign(prev => prev ? { ...prev, status: 'active' } : prev);
         }}
+      />
+
+      <EditCampaignModal
+        isOpen={isEditModalOpen}
+        campaign={campaign}
+        onClose={() => setIsEditModalOpen(false)}
+        onUpdated={(updated) => setCampaign(updated)}
       />
     </div>
   );
