@@ -10,14 +10,13 @@ import DeleteCampaignModal from './DeleteCampaignModal';
 import PublishCampaignModal from './PublishCampaignModal';
 import EditCampaignModal from './EditCampaignModal';
 
-type TabStatus = 'All' | 'active' | 'draft' | 'completed' | 'cancelled';
+type TabStatus = 'All' | 'active' | 'draft' | 'completed';
 
 const TAB_LABELS: Record<TabStatus, string> = {
   All: 'All',
-  draft: 'Draft',
   active: 'Active',
+  draft: 'Draft',
   completed: 'Completed',
-  cancelled: 'Ended',
 };
 
 const STATUS_STYLES: Record<string, { border: string; text: string }> = {
@@ -137,7 +136,7 @@ export default function CampaignTable() {
   const [editTarget, setEditTarget] = useState<Campaign | null>(null);
   const pageSize = 5;
 
-  const tabs: TabStatus[] = ['All', 'draft', 'active', 'completed', 'cancelled'];
+  const tabs: TabStatus[] = ['All', 'active', 'draft', 'completed'];
 
   const fetchCampaigns = async (page = 0) => {
     setLoading(true);
