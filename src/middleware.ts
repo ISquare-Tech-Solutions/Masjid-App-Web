@@ -48,6 +48,13 @@ export function middleware(request: NextRequest) {
 
     // Redirect authenticated users away from login page
     if (isAuthPath && hasRefreshToken) {
+        // If the client explicitly requested to clear the session (e.g. expired token), 
+        // we can forcibly delete the cookie in the middleware response.
+        if (request.nextUrl.searchParams.has('clear')) {
+            const response = NextResponse.next();
+            response.cookies.delete('refreshToken');
+            return response;
+        }
         const dashboardUrl = new URL('/dashboard', request.url);
         return NextResponse.redirect(dashboardUrl);
     }
