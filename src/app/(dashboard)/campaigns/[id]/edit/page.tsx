@@ -102,7 +102,7 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
           <div className="flex flex-col gap-[8px]">
             <label className="text-[14px] font-medium text-[var(--grey-800)]">Title</label>
             <Input
-              placeholder="Campaign title"
+              placeholder="Title"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               required
@@ -115,7 +115,7 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
               <label className="text-[14px] font-medium text-[var(--grey-800)]">Cause</label>
               <div className="relative">
                 <select
-                  className="w-full h-[48px] px-[16px] bg-white border border-[var(--border-01)] rounded-[8px] text-[14px] text-[var(--grey-800)] appearance-none outline-none focus:border-[var(--brand)] transition-colors"
+                  className="form-field h-[48px] appearance-none"
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 >
@@ -137,7 +137,7 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
                   placeholder="0"
                   min="1"
                   required
-                  className="w-full h-[48px] pl-[32px] pr-[16px] bg-white border border-[var(--border-01)] rounded-[8px] text-[14px] text-[var(--grey-800)] outline-none focus:border-[var(--brand)] transition-colors"
+                  className="form-field h-[48px] pl-[32px]"
                   value={formData.goalAmount}
                   onChange={(e) => setFormData({ ...formData, goalAmount: e.target.value })}
                 />
@@ -152,7 +152,7 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
               <input
                 type="date"
                 required
-                className="w-full h-[48px] px-[16px] bg-white border border-[var(--border-01)] rounded-[8px] text-[14px] text-[var(--grey-800)] outline-none focus:border-[var(--brand)] transition-colors"
+                className="form-field h-[48px]"
                 value={formData.startDate}
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
               />
@@ -161,7 +161,7 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
               <label className="text-[14px] font-medium text-[var(--grey-800)]">End Date <span className="text-[var(--neutral-400)] font-normal">(optional)</span></label>
               <input
                 type="date"
-                className="w-full h-[48px] px-[16px] bg-white border border-[var(--border-01)] rounded-[8px] text-[14px] text-[var(--grey-800)] outline-none focus:border-[var(--brand)] transition-colors"
+                className="form-field h-[48px]"
                 value={formData.endDate}
                 min={formData.startDate}
                 onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
@@ -173,8 +173,8 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
           <div className="flex flex-col gap-[8px]">
             <label className="text-[14px] font-medium text-[var(--grey-800)]">Description</label>
             <textarea
-              placeholder="Campaign description..."
-              className="w-full h-[120px] p-[16px] bg-white border border-[var(--border-01)] rounded-[8px] text-[14px] text-[var(--grey-800)] outline-none focus:border-[var(--brand)] transition-colors resize-none placeholder:text-[var(--neutral-400)]"
+              placeholder="Description"
+              className="form-field h-[120px] resize-none"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             />

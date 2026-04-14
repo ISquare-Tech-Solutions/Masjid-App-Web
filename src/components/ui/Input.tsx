@@ -27,21 +27,15 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             type={inputType}
             className={`
-              w-full h-[48px] px-[21px] py-[16px] 
-              border rounded-[12px] 
-              font-inter text-[16px]
-              placeholder:text-[var(--neutral-500)]
-              text-[var(--grey-800)]
-              focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent
-              transition-all duration-200
-              ${error ? 'border-[var(--error)] border-2' : 'border-[var(--border-01)]'}
+              form-field h-[48px]
+              ${error ? 'border-[var(--error)] border-2' : ''}
               ${icon || showPasswordToggle ? 'pr-[50px]' : ''}
               ${className}
             `}
             {...props}
           />
           {(icon || showPasswordToggle) && (
-            <div className="absolute right-[21px] top-1/2 -translate-y-1/2 flex items-center">
+            <div className="absolute right-[16px] top-1/2 -translate-y-1/2 flex items-center">
               {showPasswordToggle ? (
                 <button
                   type="button"

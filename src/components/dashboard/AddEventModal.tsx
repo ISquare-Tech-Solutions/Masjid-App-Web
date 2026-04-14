@@ -177,8 +177,8 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        placeholder="Title"
-                        className="w-full h-[44px] px-[12px] border border-[var(--border-01)] rounded-[12px] font-inter font-normal text-[14px] text-[var(--grey-800)] placeholder:text-[#666d80] focus:outline-none focus:ring-1 focus:ring-[var(--brand)]"
+                        placeholder="Event Title"
+                        className="form-field h-[48px]"
                     />
                 </div>
 
@@ -194,7 +194,7 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
                             value={speaker}
                             onChange={(e) => setSpeaker(e.target.value)}
                             placeholder="Speaker"
-                            className="w-full h-[44px] px-[12px] border border-[var(--border-01)] rounded-[12px] font-inter font-normal text-[14px] text-[var(--grey-800)] placeholder:text-[#666d80] focus:outline-none focus:ring-1 focus:ring-[var(--brand)]"
+                            className="form-field h-[48px]"
                         />
                     </div>
                     {/* Venue */}
@@ -206,8 +206,8 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
                             type="text"
                             value={venue}
                             onChange={(e) => setVenue(e.target.value)}
-                            placeholder="Link"
-                            className="w-full h-[44px] px-[12px] border border-[var(--border-01)] rounded-[12px] font-inter font-normal text-[14px] text-[var(--grey-800)] placeholder:text-[#666d80] focus:outline-none focus:ring-1 focus:ring-[var(--brand)]"
+                            placeholder="Venue"
+                            className="form-field h-[48px]"
                         />
                     </div>
                 </div>
@@ -221,7 +221,7 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Description"
-                        className="w-full h-[144px] px-[12px] py-[12px] border border-[var(--border-01)] rounded-[12px] font-inter font-normal text-[14px] text-[var(--grey-800)] placeholder:text-[#666d80] focus:outline-none focus:ring-1 focus:ring-[var(--brand)] resize-none"
+                        className="form-field h-[144px] resize-none"
                     />
                 </div>
 
@@ -238,7 +238,7 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
                                 min={getLocalTodayDateString()}
                                 value={eventDate}
                                 onChange={(e) => setEventDate(e.target.value)}
-                                className="w-full h-[44px] px-[12px] border border-[var(--border-01)] rounded-[12px] font-inter font-normal text-[16px] text-[var(--grey-800)] focus:outline-none focus:ring-1 focus:ring-[var(--brand)] appearance-none"
+                                className="form-field h-[48px] appearance-none"
                                 style={{ colorScheme: 'light' }}
                             />
                         </div>
@@ -278,8 +278,8 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
                             type="text"
                             value={link}
                             onChange={(e) => setLink(e.target.value)}
-                            placeholder="Link"
-                            className="w-full h-[44px] px-[12px] border border-[var(--border-01)] rounded-[12px] font-inter font-normal text-[14px] text-[var(--grey-800)] placeholder:text-[#666d80] focus:outline-none focus:ring-1 focus:ring-[var(--brand)]"
+                            placeholder="Registration Link (Optional)"
+                            className="form-field h-[48px]"
                         />
                     </div>
                     {/* Upload Image */}

@@ -62,7 +62,6 @@ export interface MasjidSettingsResponse {
     id: string;
     name: string;
     about: string | null;
-    logoUrl: string | null;
     address: MasjidAddress;
     contact: MasjidContact;
     location: MasjidLocation;
