@@ -255,8 +255,8 @@ export default function AddAnnouncementModal({ isOpen, onClose, announcement, on
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        placeholder="Masjid Maintenance Work Tomorrow"
-                        className="w-full h-[48px] px-[21px] border border-[var(--border-01)] rounded-[12px] font-inter font-normal text-[16px] text-[var(--grey-800)] placeholder:text-[#666d80] focus:outline-none focus:ring-1 focus:ring-[var(--brand)]"
+                        placeholder="Title"
+                        className="form-field h-[48px]"
                     />
                 </div>
 
@@ -268,8 +268,8 @@ export default function AddAnnouncementModal({ isOpen, onClose, announcement, on
                     <textarea
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
-                        placeholder="Please note that the masjid will undergo light maintenance tomorrow from 10 AM to 1 PM. Prayer halls will remain accessible."
-                        className="w-full h-[168px] px-[21px] py-[16px] border border-[var(--border-01)] rounded-[12px] font-inter font-normal text-[16px] text-[var(--grey-800)] placeholder:text-[#666d80] focus:outline-none focus:ring-1 focus:ring-[var(--brand)] resize-none"
+                        placeholder="Message"
+                        className="form-field h-[168px] resize-none"
                     />
                 </div>
 
@@ -287,7 +287,7 @@ export default function AddAnnouncementModal({ isOpen, onClose, announcement, on
                                     min={getLocalTodayDateString()}
                                     value={scheduleDate}
                                     onChange={(e) => setScheduleDate(e.target.value)}
-                                    className="w-full h-[44px] px-[12px] border border-[var(--border-01)] rounded-[12px] font-inter font-normal text-[16px] text-[var(--grey-800)] focus:outline-none focus:ring-1 focus:ring-[var(--brand)] appearance-none"
+                                    className="form-field h-[48px] appearance-none"
                                     style={{ colorScheme: 'light' }}
                                 />
                             </div>

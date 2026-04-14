@@ -288,7 +288,7 @@ export default function UpdatePrayerTimeModal({ prayerTime, onClose, onSuccess }
                         {PRAYER_COLS.map(({ key, label, hasJamah }) => (
                             <div key={key} className="flex-1 min-w-[120px] flex flex-col gap-[16px]">
                                 {/* Prayer Name — Figma: 20px medium uppercase */}
-                                <p className="font-inter font-medium text-[20px] text-[var(--grey-800)] uppercase leading-normal">
+                                <p className="font-inter font-medium text-[18px] text-[var(--grey-800)] uppercase leading-normal">
                                     {label}
                                 </p>
 

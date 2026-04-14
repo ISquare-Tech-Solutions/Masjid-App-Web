@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
+import ForgotPasswordModal from '@/components/auth/ForgotPasswordModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { ApiError } from '@/lib/api/client';
 import type { LoginFormData, LoginFormErrors } from '@/types';
@@ -10,6 +11,7 @@ import type { LoginFormData, LoginFormErrors } from '@/types';
 export default function LoginPage() {
   const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: '',
@@ -78,7 +80,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-white flex flex-col">
       {/* Main Content */}
       <main className="flex-1 flex items-center justify-center px-4">
-        <div className="w-full max-w-[548px]">
+        <div className="w-full max-w-[448px]">
           {/* Login Form Container */}
           <div className="p-6">
             {/* Greeting */}
@@ -129,7 +131,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 variant="primary"
-                size="lg"
+                size="md"
                 fullWidth
                 isLoading={isLoading}
                 className="mt-4"
@@ -140,11 +142,8 @@ export default function LoginPage() {
               {/* Forgot Password Link */}
               <button
                 type="button"
-                className="font-inter font-medium text-[20px] text-[var(--grey-800)] text-center hover:underline"
-                onClick={() => {
-                  // TODO: Implement forgot password
-                  console.log('Forgot password clicked');
-                }}
+                className="font-inter font-medium text-[16px] text-[var(--grey-800)] text-center hover:underline"
+                onClick={() => setIsForgotPasswordOpen(true)}
               >
                 Forget Password?
               </button>
@@ -152,6 +151,12 @@ export default function LoginPage() {
           </div>
         </div>
       </main>
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal
+        isOpen={isForgotPasswordOpen}
+        onClose={() => setIsForgotPasswordOpen(false)}
+      />
 
       {/* Footer */}
       <footer className="px-[136px] py-[42px] flex justify-between items-center">
