@@ -75,7 +75,7 @@ export default function Header({ activeNav = 'dashboard' }: HeaderProps) {
 
   return (
     <>
-      <header className="w-full bg-white border-b border-[var(--border-01)]">
+      <header className="w-full bg-white border-b border-[var(--border-01)] sticky top-0 z-40">
         <div className="max-w-[1440px] mx-auto px-[60px] py-[16px] flex items-center justify-between">
           <Link href="/dashboard" className="relative w-[52px] h-[52px] shrink-0">
             <Image src="/images/nwk-logo.png" alt="NWK Muslim Association" fill className="object-contain" />

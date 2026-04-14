@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { UploadIcon } from '@/components/ui/Icons';
+import ContentSwitcher from '@/components/ui/ContentSwitcher';
+import { ChevronDownIcon } from '@/components/ui/Icons';
 import { getSettings, updateSettings, updatePaymentSettings, connectStripe, disconnectStripe, getStripeStatus } from '@/lib/api/settings';
 import type {
   MasjidSettingsResponse,
@@ -66,7 +67,7 @@ const RadioYesNo = ({
 
 const SettingInput = ({
   label,
-  placeholder = '-',
+  placeholder,
   value,
   onChange,
 }: {
@@ -81,10 +82,10 @@ const SettingInput = ({
     </label>
     <input
       type="text"
-      placeholder={placeholder}
+      placeholder={placeholder ?? label}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full h-[48px] px-[21px] py-[16px] border border-[#e2e8f0] rounded-[12px] font-inter text-[16px] text-[#666d80] placeholder:text-[#666d80] focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-all"
+      className="form-field h-[48px]"
     />
   </div>
 );
@@ -135,7 +136,8 @@ function SettingsPageContent() {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'masjid' | 'bank'>('masjid');
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [savingInfo, setSavingInfo] = useState(false);
+  const [savingServices, setSavingServices] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
   const [connectingStripe, setConnectingStripe] = useState(false);
   const [disconnectingStripe, setDisconnectingStripe] = useState(false);
@@ -174,6 +176,17 @@ function SettingsPageContent() {
     wuduFacilities: false,
     washroom: false,
   });
+  const [wuduType, setWuduType] = useState<'Men' | 'Women' | 'Both' | ''>('');
+
+  const [hasInfoData, setHasInfoData] = useState(false);
+  const [infoSnapshot, setInfoSnapshot] = useState({ name: '', about: '', phone: '', email: '', website: '', addressLine1: '', addressLine2: '', city: '', postcode: '' });
+
+  const [hasServicesData, setHasServicesData] = useState(false);
+  const [servicesSnapshot, setServicesSnapshot] = useState({
+    mensCapacity: '', womensCapacity: '', hasWomensArea: false,
+    services: {} as MasjidServices,
+    facilities: {} as MasjidFacilities,
+  });
 
   // Payment form state
   const [bankAccountName, setBankAccountName] = useState('');
@@ -182,25 +195,37 @@ function SettingsPageContent() {
   const [bankSortCode, setBankSortCode] = useState('');
 
   const populateForm = useCallback((data: MasjidSettingsResponse) => {
-    setName(data.name || '');
-    setAbout(data.about || '');
-    setPhone(data.contact?.phone || '');
-    setEmail(data.contact?.email || '');
-    setWebsite(data.contact?.website || '');
-    setAddressLine1(data.address?.line1 || '');
-    setAddressLine2(data.address?.line2 || '');
-    setCity(data.address?.city || '');
-    setPostcode(data.address?.postcode || '');
-    setMensCapacity(data.capacity?.mens?.toString() || '');
-    setWomensCapacity(data.capacity?.womens?.toString() || '');
-    setHasWomensArea((data.capacity?.womens ?? 0) > 0);
+    const info = {
+      name: data.name || '',
+      about: data.about || '',
+      phone: data.contact?.phone || '',
+      email: data.contact?.email || '',
+      website: data.contact?.website || '',
+      addressLine1: data.address?.line1 || '',
+      addressLine2: data.address?.line2 || '',
+      city: data.address?.city || '',
+      postcode: data.address?.postcode || '',
+    };
+    const svc = {
+      mensCapacity: data.capacity?.mens?.toString() || '',
+      womensCapacity: data.capacity?.womens?.toString() || '',
+      hasWomensArea: (data.capacity?.womens ?? 0) > 0,
+      services: data.services ?? { marriageService: false, hallRental: false, iftarProgram: false, counseling: false, newMuslimSupport: false, funeralService: false },
+      facilities: data.facilities ?? { parking: false, womensArea: false, shoeRacks: false, wuduFacilities: false, washroom: false },
+    };
 
-    if (data.services) {
-      setServices(data.services);
-    }
-    if (data.facilities) {
-      setFacilities(data.facilities);
-    }
+    setName(info.name); setAbout(info.about); setPhone(info.phone);
+    setEmail(info.email); setWebsite(info.website);
+    setAddressLine1(info.addressLine1); setAddressLine2(info.addressLine2);
+    setCity(info.city); setPostcode(info.postcode);
+    setMensCapacity(svc.mensCapacity); setWomensCapacity(svc.womensCapacity);
+    setHasWomensArea(svc.hasWomensArea);
+    setServices(svc.services); setFacilities(svc.facilities);
+
+    setInfoSnapshot(info);
+    setHasInfoData(!!data.name);
+    setServicesSnapshot(svc);
+    setHasServicesData(!!(data.services || data.facilities || data.capacity));
 
     setBankAccountName(data.payment?.bankAccountName || '');
     setBankName(data.payment?.bankName || '');
@@ -267,44 +292,90 @@ function SettingsPageContent() {
     }
   };
 
-  const handleSaveMasjidDetails = async () => {
+  // --- Masjid Information module ---
+  const isInfoDirty = useMemo(() => {
+    if (!hasInfoData) return false;
+    return (
+      name !== infoSnapshot.name || about !== infoSnapshot.about ||
+      phone !== infoSnapshot.phone || email !== infoSnapshot.email ||
+      website !== infoSnapshot.website || addressLine1 !== infoSnapshot.addressLine1 ||
+      addressLine2 !== infoSnapshot.addressLine2 || city !== infoSnapshot.city ||
+      postcode !== infoSnapshot.postcode
+    );
+  }, [hasInfoData, infoSnapshot, name, about, phone, email, website, addressLine1, addressLine2, city, postcode]);
+
+  const handleSaveInfo = async () => {
     if (!name.trim()) {
       setToast({ message: 'Masjid name is required', type: 'error' });
       return;
     }
-
     try {
-      setSaving(true);
-      const data = await updateSettings({
-        name: name.trim(),
-        about: about.trim() || null,
-        address: {
-          line1: addressLine1.trim() || null,
-          line2: addressLine2.trim() || null,
-          city: city.trim() || null,
-          postcode: postcode.trim() || null,
-          country: 'United Kingdom',
-        },
-        contact: {
-          phone: phone.trim() || null,
-          email: email.trim() || null,
-          website: website.trim() || null,
-        },
-        capacity: {
-          mens: mensCapacity ? parseInt(mensCapacity) : null,
-          womens: womensCapacity ? parseInt(womensCapacity) : null,
-        },
-        services,
-        facilities,
+      setSavingInfo(true);
+      await updateSettings({
+        name: name.trim(), about: about.trim() || null,
+        address: { line1: addressLine1.trim() || null, line2: addressLine2.trim() || null, city: city.trim() || null, postcode: postcode.trim() || null, country: 'United Kingdom' },
+        contact: { phone: phone.trim() || null, email: email.trim() || null, website: website.trim() || null },
+        capacity: { mens: mensCapacity ? parseInt(mensCapacity) : null, womens: womensCapacity ? parseInt(womensCapacity) : null },
+        services, facilities,
       });
-      populateForm(data);
-      setToast({ message: 'Masjid details saved successfully', type: 'success' });
+      const newSnap = { name: name.trim(), about: about.trim(), phone: phone.trim(), email: email.trim(), website: website.trim(), addressLine1: addressLine1.trim(), addressLine2: addressLine2.trim(), city: city.trim(), postcode: postcode.trim() };
+      setInfoSnapshot(newSnap);
+      setHasInfoData(true);
+      setToast({ message: 'Masjid information saved successfully', type: 'success' });
     } catch (err) {
-      console.error('Failed to save settings:', err);
-      setToast({ message: 'Failed to save settings', type: 'error' });
+      console.error('Failed to save info:', err);
+      setToast({ message: 'Failed to save masjid information', type: 'error' });
     } finally {
-      setSaving(false);
+      setSavingInfo(false);
     }
+  };
+
+  const handleDiscardInfo = () => {
+    setName(infoSnapshot.name); setAbout(infoSnapshot.about); setPhone(infoSnapshot.phone);
+    setEmail(infoSnapshot.email); setWebsite(infoSnapshot.website);
+    setAddressLine1(infoSnapshot.addressLine1); setAddressLine2(infoSnapshot.addressLine2);
+    setCity(infoSnapshot.city); setPostcode(infoSnapshot.postcode);
+  };
+
+  // --- Services / Facilities / Capacity module ---
+  const isServicesDirty = useMemo(() => {
+    if (!hasServicesData) return false;
+    return (
+      mensCapacity !== servicesSnapshot.mensCapacity ||
+      womensCapacity !== servicesSnapshot.womensCapacity ||
+      hasWomensArea !== servicesSnapshot.hasWomensArea ||
+      JSON.stringify(services) !== JSON.stringify(servicesSnapshot.services) ||
+      JSON.stringify(facilities) !== JSON.stringify(servicesSnapshot.facilities)
+    );
+  }, [hasServicesData, servicesSnapshot, mensCapacity, womensCapacity, hasWomensArea, services, facilities]);
+
+  const handleSaveServices = async () => {
+    try {
+      setSavingServices(true);
+      await updateSettings({
+        name: name.trim(), about: about.trim() || null,
+        address: { line1: addressLine1.trim() || null, line2: addressLine2.trim() || null, city: city.trim() || null, postcode: postcode.trim() || null, country: 'United Kingdom' },
+        contact: { phone: phone.trim() || null, email: email.trim() || null, website: website.trim() || null },
+        capacity: { mens: mensCapacity ? parseInt(mensCapacity) : null, womens: womensCapacity ? parseInt(womensCapacity) : null },
+        services, facilities,
+      });
+      setServicesSnapshot({ mensCapacity, womensCapacity, hasWomensArea, services, facilities });
+      setHasServicesData(true);
+      setToast({ message: 'Services & facilities saved successfully', type: 'success' });
+    } catch (err) {
+      console.error('Failed to save services:', err);
+      setToast({ message: 'Failed to save services & facilities', type: 'error' });
+    } finally {
+      setSavingServices(false);
+    }
+  };
+
+  const handleDiscardServices = () => {
+    setMensCapacity(servicesSnapshot.mensCapacity);
+    setWomensCapacity(servicesSnapshot.womensCapacity);
+    setHasWomensArea(servicesSnapshot.hasWomensArea);
+    setServices(servicesSnapshot.services);
+    setFacilities(servicesSnapshot.facilities);
   };
 
   const handleSavePayment = async () => {
@@ -333,28 +404,14 @@ function SettingsPageContent() {
       <h1 className="font-inter font-bold text-[28px] text-[#1f1f1f] leading-none">App Settings</h1>
 
       {/* Tab Bar */}
-      <div className="bg-[rgba(7,119,52,0.05)] flex items-center">
-        <button
-          onClick={() => setActiveTab('masjid')}
-          className={`w-[250px] h-[69px] flex items-center justify-center font-inter text-[18px] transition-colors
-            ${activeTab === 'masjid'
-              ? 'border-b-2 border-[var(--brand)] text-[var(--brand)] font-semibold'
-              : 'border-b-2 border-transparent text-[#36394a] font-normal'
-            }`}
-        >
-          Masjid Details
-        </button>
-        <button
-          onClick={() => setActiveTab('bank')}
-          className={`w-[250px] h-[69px] flex items-center justify-center font-inter text-[18px] transition-colors
-            ${activeTab === 'bank'
-              ? 'border-b-2 border-[var(--brand)] text-[var(--brand)] font-semibold'
-              : 'border-b-2 border-transparent text-[#36394a] font-normal'
-            }`}
-        >
-          Bank &amp; Payment Settings
-        </button>
-      </div>
+      <ContentSwitcher
+        tabs={[
+          { id: 'masjid', label: 'Masjid Details' },
+          { id: 'bank', label: 'Bank & Payment Settings' },
+        ]}
+        activeTab={activeTab}
+        onChange={(id) => setActiveTab(id as 'masjid' | 'bank')}
+      />
 
       {/* Masjid Details Tab */}
       {activeTab === 'masjid' && (
@@ -365,48 +422,26 @@ function SettingsPageContent() {
             <h2 className="font-inter font-semibold text-[20px] text-[#36394a]">Masjid Informations</h2>
             <div className="h-[2px] bg-[#f6f6f6] rounded-[2px]" />
 
-            {/* Form Fields + Logo Upload */}
-            <div className="flex gap-[24px]">
-              <div className="flex flex-col gap-[24px] flex-1">
+            {/* Form Fields — 2 columns */}
+            <div className="flex flex-col gap-[24px]">
+              <div className="flex gap-[24px]">
                 <SettingInput label="Masjid Name" value={name} onChange={setName} />
                 <SettingInput label="Contact Number" value={phone} onChange={setPhone} />
+              </div>
+              <div className="flex gap-[24px]">
                 <SettingInput label="Email" value={email} onChange={setEmail} />
                 <SettingInput label="Website" value={website} onChange={setWebsite} />
-              </div>
-              <div className="flex flex-col items-center flex-1 pt-[8px]">
-                <div className="w-[56px] h-[56px] mb-[24px] rounded-[16px] bg-[#89C7A1] flex items-center justify-center text-white">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-                <button className="flex items-center gap-[8px] mb-[12px]">
-                  <UploadIcon className="text-[var(--brand)]" size={20} />
-                  <span className="text-[16px] text-[var(--brand)]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                    Upload LOGO
-                  </span>
-                </button>
-                <p className="text-[14px] text-[#666d80] text-center" style={{ fontFamily: "'Inter', sans-serif" }}>
-                  Upload Your Logo.
-                </p>
-                <p className="text-[12px] text-[#666d80] text-center mt-[4px]" style={{ fontFamily: "'Inter', sans-serif" }}>
-                  File Format <strong className="text-[#36394a]">.jpeg, .Png</strong> Recommened Size{' '}
-                  <strong className="text-[#36394a]">600x600 (1:1)</strong>
-                </p>
               </div>
             </div>
 
             {/* About + Address */}
             <div className="flex gap-[24px]">
               <div className="flex flex-col gap-[8px] flex-1">
-                <label className="font-inter font-semibold text-[16px] text-[#4b4b4b] tracking-[0.16px] leading-none">
-                  About Masjid
-                </label>
                 <textarea
-                  placeholder="-"
+                  placeholder="About Masjid"
                   value={about}
                   onChange={(e) => setAbout(e.target.value)}
-                  className="w-full min-h-[148px] px-[21px] py-[16px] border border-[#e2e8f0] rounded-[12px] font-inter text-[16px] text-[#666d80] placeholder:text-[#666d80] focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent resize-none"
+                  className="form-field min-h-[148px] resize-none"
                 />
               </div>
               <div className="flex flex-col gap-[24px] flex-1">
@@ -420,13 +455,22 @@ function SettingsPageContent() {
             </div>
 
             {/* Save Info */}
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-[12px]">
+              {hasInfoData && isInfoDirty && (
+                <button
+                  onClick={handleDiscardInfo}
+                  disabled={savingInfo}
+                  className="h-[44px] px-[24px] border border-[#e2e8f0] text-[#4b4b4b] rounded-[12px] font-inter font-medium text-[16px] hover:bg-[#f6f6f6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Discard
+                </button>
+              )}
               <button
-                onClick={handleSaveMasjidDetails}
-                disabled={saving}
+                onClick={handleSaveInfo}
+                disabled={savingInfo}
                 className="h-[44px] px-[24px] bg-[var(--brand)] text-white rounded-[12px] font-inter font-medium text-[16px] hover:bg-[#065d29] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {saving ? 'Saving...' : 'Save'}
+                {savingInfo ? 'Saving...' : hasInfoData && isInfoDirty ? 'Save Changes' : 'Save'}
               </button>
             </div>
 
@@ -508,11 +552,31 @@ function SettingsPageContent() {
                   checked={facilities.shoeRacks}
                   onChange={(v) => setFacilities((f) => ({ ...f, shoeRacks: v }))}
                 />
-                <Checkbox
-                  label="Ablutions rooms"
-                  checked={facilities.wuduFacilities}
-                  onChange={(v) => setFacilities((f) => ({ ...f, wuduFacilities: v }))}
-                />
+                <div className="flex flex-col gap-[10px]">
+                  <Checkbox
+                    label="Ablutions rooms"
+                    checked={facilities.wuduFacilities}
+                    onChange={(v) => {
+                      setFacilities((f) => ({ ...f, wuduFacilities: v }));
+                      if (!v) setWuduType('');
+                    }}
+                  />
+                  {facilities.wuduFacilities && (
+                    <div className="relative ml-[28px]">
+                      <select
+                        className="form-field h-[44px] appearance-none text-[14px] text-[#1f1f1f] font-inter font-medium"
+                        value={wuduType}
+                        onChange={(e) => setWuduType(e.target.value as 'Men' | 'Women' | 'Both')}
+                      >
+                        <option value="" disabled className="text-[#9ca3af]">Select access type</option>
+                        <option value="Men" className="text-[#1f1f1f] font-medium">Men</option>
+                        <option value="Women" className="text-[#1f1f1f] font-medium">Women</option>
+                        <option value="Both" className="text-[#1f1f1f] font-medium">Both</option>
+                      </select>
+                      <ChevronDownIcon size={16} className="absolute right-[12px] top-1/2 -translate-y-1/2 text-[var(--neutral-500)] pointer-events-none" />
+                    </div>
+                  )}
+                </div>
                 <Checkbox
                   label="Washroom"
                   checked={facilities.washroom}
@@ -537,13 +601,14 @@ function SettingsPageContent() {
               </div>
               <div className="flex flex-col gap-[16px] flex-1">
                 <div className="flex flex-col gap-[6px]">
-                  <span className="font-inter font-medium text-[14px] text-[#667085]">Men</span>
                   <input
                     type="number"
-                    placeholder="00"
+                    placeholder="Men"
+                    min="0"
                     value={mensCapacity}
                     onChange={(e) => setMensCapacity(e.target.value)}
-                    className="w-full h-[48px] px-[21px] py-[16px] border border-[#e2e8f0] rounded-[12px] font-inter text-[16px] text-[#8e8e8e] placeholder:text-[#8e8e8e] focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent"
+                    onWheel={(e) => e.currentTarget.blur()}
+                    className="form-field h-[48px]"
                   />
                 </div>
                 <div className="flex flex-col gap-[6px]">
@@ -557,24 +622,35 @@ function SettingsPageContent() {
                   {hasWomensArea && (
                     <input
                       type="number"
-                      placeholder="00"
+                      placeholder="Women"
+                      min="0"
                       value={womensCapacity}
                       onChange={(e) => setWomensCapacity(e.target.value)}
-                      className="w-full h-[48px] px-[21px] py-[16px] border border-[#e2e8f0] rounded-[12px] font-inter text-[16px] text-[#8e8e8e] placeholder:text-[#8e8e8e] focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent"
+                      onWheel={(e) => e.currentTarget.blur()}
+                      className="form-field h-[48px]"
                     />
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Save All */}
-            <div className="flex justify-end">
+            {/* Save Services */}
+            <div className="flex justify-end gap-[12px]">
+              {hasServicesData && isServicesDirty && (
+                <button
+                  onClick={handleDiscardServices}
+                  disabled={savingServices}
+                  className="h-[44px] px-[24px] border border-[#e2e8f0] text-[#4b4b4b] rounded-[12px] font-inter font-medium text-[16px] hover:bg-[#f6f6f6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Discard
+                </button>
+              )}
               <button
-                onClick={handleSaveMasjidDetails}
-                disabled={saving}
+                onClick={handleSaveServices}
+                disabled={savingServices}
                 className="h-[44px] px-[24px] bg-[var(--brand)] text-white rounded-[12px] font-inter font-medium text-[16px] hover:bg-[#065d29] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {saving ? 'Saving...' : 'Save'}
+                {savingServices ? 'Saving...' : hasServicesData && isServicesDirty ? 'Save Changes' : 'Save'}
               </button>
             </div>
           </div>

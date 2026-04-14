@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createPrayerTime, updatePrayerTime, bulkCreatePrayerTimes } from '@/lib/api/prayer-times';
 import DateRangePicker from './DateRangePicker';
 import TimePicker from '@/components/ui/TimePicker';
+import ModalCloseButton from '@/components/ui/ModalCloseButton';
 import type { PrayerTimeResponse, PrayersData, JumuahTimeEntry } from '@/types/prayer-times';
 
 /* ── Props ── */
@@ -226,14 +227,7 @@ export default function UpdatePrayerTimeModal({ prayerTime, onClose, onSuccess }
                     <h2 className="font-inter font-bold text-[24px] text-[#1f1f1f] leading-normal">
                         Add/Update Prayer Time
                     </h2>
-                    <button
-                        onClick={onClose}
-                        className="w-[36px] h-[36px] flex items-center justify-center bg-[rgba(7,119,52,0.1)] rounded-[8px] hover:bg-[rgba(7,119,52,0.2)] transition-colors cursor-pointer shrink-0"
-                    >
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                            <path d="M11 3L3 11M3 3l8 8" stroke="#36394a" strokeWidth="1.5" strokeLinecap="round" />
-                        </svg>
-                    </button>
+                    <ModalCloseButton onClick={onClose} />
                 </div>
 
                 {/* ── Date Range Field — Figma: gap-[8px], label 16px semibold #4b4b4b ── */}
@@ -294,7 +288,7 @@ export default function UpdatePrayerTimeModal({ prayerTime, onClose, onSuccess }
                         {PRAYER_COLS.map(({ key, label, hasJamah }) => (
                             <div key={key} className="flex-1 min-w-[120px] flex flex-col gap-[16px]">
                                 {/* Prayer Name — Figma: 20px medium uppercase */}
-                                <p className="font-inter font-medium text-[20px] text-[var(--grey-800)] uppercase leading-normal">
+                                <p className="font-inter font-medium text-[18px] text-[var(--grey-800)] uppercase leading-normal">
                                     {label}
                                 </p>
 

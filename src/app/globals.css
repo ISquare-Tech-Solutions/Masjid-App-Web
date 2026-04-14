@@ -101,3 +101,26 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Global Form Field — standard sizing for all inputs, selects, and textareas */
+.form-field {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--border-01);
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--grey-800);
+  background-color: #ffffff;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.form-field::placeholder {
+  color: var(--neutral-500);
+}
+
+.form-field:focus {
+  border-color: transparent;
+  box-shadow: 0 0 0 2px var(--brand);
+}

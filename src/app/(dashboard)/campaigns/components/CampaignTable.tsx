@@ -8,15 +8,15 @@ import { getCampaigns, updateCampaignStatus, deleteCampaign } from '@/lib/api/ca
 import { downloadDonorPdf } from '@/lib/downloadDonorPdf';
 import DeleteCampaignModal from './DeleteCampaignModal';
 import PublishCampaignModal from './PublishCampaignModal';
+import EditCampaignModal from './EditCampaignModal';
 
-type TabStatus = 'All' | 'active' | 'draft' | 'completed' | 'cancelled';
+type TabStatus = 'All' | 'active' | 'draft' | 'completed';
 
 const TAB_LABELS: Record<TabStatus, string> = {
   All: 'All',
-  draft: 'Draft',
   active: 'Active',
+  draft: 'Draft',
   completed: 'Completed',
-  cancelled: 'Ended',
 };
 
 const STATUS_STYLES: Record<string, { border: string; text: string }> = {
@@ -79,14 +79,14 @@ const Duration = ({ startDate, endDate }: { startDate?: string; endDate?: string
 
 const RowActions = ({
   campaign,
-  onStatusChange,
   onDeleteClick,
   onPublishClick,
+  onEditClick,
 }: {
   campaign: Campaign;
-  onStatusChange: () => void;
   onDeleteClick: (campaign: Campaign) => void;
   onPublishClick: (campaign: Campaign) => void;
+  onEditClick: (campaign: Campaign) => void;
 }) => {
   switch (campaign.status) {
     case 'active':
@@ -94,7 +94,7 @@ const RowActions = ({
       return (
         <div className="flex items-center gap-[10px]">
           <Link href={`/campaigns/${campaign.id}`} className="text-[#667085] hover:text-[var(--brand)] transition-colors"><EyeIcon size={20} /></Link>
-          <Link href={`/campaigns/${campaign.id}/edit`} className="text-[#667085] hover:text-[var(--brand)] transition-colors"><EditIcon size={20} /></Link>
+          <button onClick={() => onEditClick(campaign)} className="text-[#667085] hover:text-[var(--brand)] transition-colors"><EditIcon size={20} /></button>
           <span className="relative flex items-center justify-center w-[20px] h-[20px]" title="Live">
             <span className="animate-ping absolute inline-flex h-[10px] w-[10px] rounded-full bg-[#eb6f70] opacity-75" />
             <span className="relative inline-flex h-[8px] w-[8px] rounded-full bg-[#f64c4c]" />
@@ -113,7 +113,7 @@ const RowActions = ({
       return (
         <div className="flex items-center gap-[10px]">
           <button onClick={() => onPublishClick(campaign)} title="Publish" className="text-[var(--brand)] hover:opacity-80 transition-opacity"><SendIcon size={18} /></button>
-          <Link href={`/campaigns/${campaign.id}/edit`} className="text-[#667085] hover:text-[var(--brand)] transition-colors"><EditIcon size={20} /></Link>
+          <button onClick={() => onEditClick(campaign)} className="text-[#667085] hover:text-[var(--brand)] transition-colors"><EditIcon size={20} /></button>
           <button onClick={() => onDeleteClick(campaign)} className="text-[#eb6f70] hover:opacity-80 transition-opacity"><TrashIcon size={20} /></button>
         </div>
       );
@@ -130,22 +130,27 @@ export default function CampaignTable() {
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Campaign | null>(null);
   const [publishTarget, setPublishTarget] = useState<Campaign | null>(null);
+  const [editTarget, setEditTarget] = useState<Campaign | null>(null);
   const pageSize = 5;
 
-  const tabs: TabStatus[] = ['All', 'draft', 'active', 'completed', 'cancelled'];
+  const tabs: TabStatus[] = ['All', 'active', 'draft', 'completed'];
 
   const fetchCampaigns = async (page = 0) => {
     setLoading(true);
+    setFetchError(null);
     try {
       const result = await getCampaigns({ page, size: pageSize });
       setCampaigns(result.content);
       setTotalItems(result.pagination.totalElements);
       setTotalPages(result.pagination.totalPages);
       setCurrentPage(page);
-    } catch (err) {
-      console.error('Failed to fetch campaigns', err);
+    } catch (err: any) {
+      const msg = err?.message || 'Failed to load campaigns.';
+      setFetchError(msg);
+      console.warn('Failed to fetch campaigns:', msg);
     } finally {
       setLoading(false);
     }
@@ -201,10 +206,25 @@ export default function CampaignTable() {
         </div>
       </div>
 
-      <div className="h-[2px] bg-[#f6f6f6] rounded-[2px] w-full mt-[16px]" />
-
-      {/* Table */}
-      <table className="w-full text-left">
+      {/* Table or Empty State */}
+      {!loading && !fetchError && filteredCampaigns.length === 0 ? (
+        <div className="mt-[16px] bg-[var(--white\/table-white,#fafbfb)] border border-[var(--white\/border,#e2e8f0)] border-dashed flex flex-col gap-[16px] items-center px-[24px] py-[80px] rounded-[24px] w-full mb-[24px]">
+          <div className="bg-white border border-[#e2e8f0] flex items-center justify-center p-[8px] rounded-[99px] size-[48px]">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#666d80" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />
+            </svg>
+          </div>
+          <div className="flex flex-col gap-[8px] items-center text-center">
+            <h3 className="font-['Inter'] font-bold text-[20px] text-[#36394a]">
+              No {activeTab !== 'All' ? TAB_LABELS[activeTab].toLowerCase() + ' ' : ''}campaigns found
+            </h3>
+            <p className="font-['Inter'] font-medium text-[16px] text-[#666d80] max-w-[374px]">
+              Try adjusting your filters or create a new campaign to get started.
+            </p>
+          </div>
+        </div>
+      ) : (
+      <table className="w-full text-left mt-[16px]">
         <thead>
           <tr className="bg-[#fafbfb] border-y border-[var(--border-01)] h-[48px]">
             <th className="px-[16px] text-[12px] font-medium text-[#667085] uppercase font-inter">Campaign Name</th>
@@ -218,8 +238,8 @@ export default function CampaignTable() {
         <tbody>
           {loading ? (
             <tr><td colSpan={6} className="px-[24px] py-[32px] text-center text-[var(--neutral-500)]">Loading...</td></tr>
-          ) : filteredCampaigns.length === 0 ? (
-            <tr><td colSpan={6} className="px-[24px] py-[32px] text-center text-[var(--neutral-500)]">No campaigns found.</td></tr>
+          ) : fetchError ? (
+            <tr><td colSpan={6} className="px-[24px] py-[32px] text-center text-red-500 text-[14px]">{fetchError}</td></tr>
           ) : filteredCampaigns.map((campaign, index) => (
             <tr key={campaign.id} className={`h-[71px] hover:bg-[#f0f4f8] transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-[#fafbfb]'}`}>
               <td className="px-[16px] text-[14px] text-[#666d80] font-medium font-inter">
@@ -235,11 +255,12 @@ export default function CampaignTable() {
                 <Duration startDate={campaign.startDate} endDate={campaign.endDate} />
               </td>
               <td className="px-[16px]"><StatusPill status={campaign.status} /></td>
-              <td className="px-[16px]"><RowActions campaign={campaign} onStatusChange={() => fetchCampaigns(currentPage)} onDeleteClick={setDeleteTarget} onPublishClick={setPublishTarget} /></td>
+              <td className="px-[16px]"><RowActions campaign={campaign} onDeleteClick={setDeleteTarget} onPublishClick={setPublishTarget} onEditClick={setEditTarget} /></td>
             </tr>
           ))}
         </tbody>
       </table>
+      )}
 
       {/* Pagination */}
       <div className="h-[40px] border-t border-[#e2e8f0] flex items-center justify-between text-[14px] text-[#4b4b4b] font-inter mt-auto">
@@ -289,6 +310,17 @@ export default function CampaignTable() {
         }}
       />
 
+      {editTarget && (
+        <EditCampaignModal
+          isOpen={editTarget !== null}
+          campaign={editTarget}
+          onClose={() => setEditTarget(null)}
+          onUpdated={async () => {
+            await fetchCampaigns(currentPage);
+            setEditTarget(null);
+          }}
+        />
+      )}
 
     </div>
   );

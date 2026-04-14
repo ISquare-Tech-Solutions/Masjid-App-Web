@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import DateHeader from '@/components/dashboard/DateHeader';
 import PrayerTimeCard from '@/components/dashboard/PrayerTimeCard';
 import JummahCard from '@/components/dashboard/JummahCard';
@@ -8,6 +9,10 @@ import QuickActionButton from '@/components/dashboard/QuickActionButton';
 import EventCard from '@/components/dashboard/EventCard';
 import CampaignCard from '@/components/dashboard/CampaignCard';
 import Skeleton from '@/components/ui/Skeleton';
+import AddEventModal from '@/components/dashboard/AddEventModal';
+import AddAnnouncementModal from '@/components/dashboard/AddAnnouncementModal';
+import AddCampaignModal from '@/app/(dashboard)/campaigns/components/AddCampaignModal';
+import UpdatePrayerTimeModal from '@/components/prayer-management/UpdatePrayerTimeModal';
 import type { PrayerTime, Event, Campaign } from '@/types';
 import { getPrayerTimes } from '@/lib/api/prayer-times';
 import type { PrayerTimeResponse, PrayersData, JumuahTimeEntry } from '@/types/prayer-times';
@@ -103,9 +108,16 @@ const PRAYER_LABELS: Record<string, string> = {
 };
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [prayerData, setPrayerData] = useState<PrayerTimeResponse[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Quick action modal states
+  const [isAddEventOpen, setIsAddEventOpen] = useState(false);
+  const [isAddAnnouncementOpen, setIsAddAnnouncementOpen] = useState(false);
+  const [isAddCampaignOpen, setIsAddCampaignOpen] = useState(false);
+  const [isUpdatePrayerOpen, setIsUpdatePrayerOpen] = useState(false);
 
   // Track month/year for fetching
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
@@ -260,15 +272,15 @@ export default function DashboardPage() {
 
       {/* Quick Actions */}
       <div className="flex gap-[18px]">
-        <QuickActionButton label="Add Event" onClick={() => console.log('Add Event')} />
+        <QuickActionButton label="Add Event" onClick={() => setIsAddEventOpen(true)} />
         <QuickActionButton
           label="Add Announcement"
-          onClick={() => console.log('Add Announcement')}
+          onClick={() => setIsAddAnnouncementOpen(true)}
         />
-        <QuickActionButton label="Create Campaign" onClick={() => console.log('Create Campaign')} />
+        <QuickActionButton label="Create Campaign" onClick={() => setIsAddCampaignOpen(true)} />
         <QuickActionButton
           label="Update Prayer Timings"
-          onClick={() => console.log('Update Prayer Timings')}
+          onClick={() => setIsUpdatePrayerOpen(true)}
         />
       </div>
 
@@ -295,6 +307,30 @@ export default function DashboardPage() {
           ))}
         </div>
       </section>
+
+      {/* Quick Action Modals */}
+      <AddEventModal
+        isOpen={isAddEventOpen}
+        onClose={() => { setIsAddEventOpen(false); router.push('/events'); }}
+      />
+
+      <AddAnnouncementModal
+        isOpen={isAddAnnouncementOpen}
+        onClose={() => { setIsAddAnnouncementOpen(false); router.push('/events'); }}
+      />
+
+      <AddCampaignModal
+        isOpen={isAddCampaignOpen}
+        onClose={() => { setIsAddCampaignOpen(false); router.push('/campaigns'); }}
+      />
+
+      {isUpdatePrayerOpen && (
+        <UpdatePrayerTimeModal
+          prayerTime={null}
+          onClose={() => { setIsUpdatePrayerOpen(false); router.push('/prayer-management'); }}
+          onSuccess={() => { setIsUpdatePrayerOpen(false); router.push('/prayer-management'); }}
+        />
+      )}
     </div>
   );
 }
