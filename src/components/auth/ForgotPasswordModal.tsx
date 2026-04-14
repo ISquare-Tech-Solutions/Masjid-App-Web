@@ -1,4 +1,4 @@
-c'use client';
+'use client';
 
 import Modal from '@/components/ui/Modal';
 import ModalCloseButton from '@/components/ui/ModalCloseButton';
