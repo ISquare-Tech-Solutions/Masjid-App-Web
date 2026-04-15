@@ -269,14 +269,14 @@ export default function TimePicker({
                     onKeyDown={handleKeyDown}
                     disabled={disabled}
                     placeholder={placeholder}
-                    className={`bg-transparent outline-none border-none font-inter text-[16px] w-full
+                    className={`bg-transparent outline-none border-none font-inter text-[14px] w-full
                         ${disabled ? 'text-[var(--neutral-300)] cursor-not-allowed' : 'text-[var(--grey-800)]'}
                     `}
                     style={{ fontFamily: "'Inter', sans-serif" }}
                 />
                 {/* AM/PM label on right side */}
                 <span
-                    className={`font-inter text-[16px] shrink-0 ml-[8px] select-none
+                    className={`font-inter text-[14px] shrink-0 ml-[8px] select-none
                         ${disabled ? 'text-[var(--neutral-300)]' : 'text-[var(--grey-800)]'}
                     `}
                     style={{ fontFamily: "'Inter', sans-serif" }}

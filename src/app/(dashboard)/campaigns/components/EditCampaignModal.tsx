@@ -1,22 +1,22 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { ChevronLeftIcon, ChevronDownIcon } from '@/components/ui/Icons';
+import { useState, useEffect } from 'react';
+import Modal from '@/components/ui/Modal';
+import ConfirmModal from '@/components/ui/ConfirmModal';
+import { ChevronDownIcon, EditIcon } from '@/components/ui/Icons';
+import ModalCloseButton from '@/components/ui/ModalCloseButton';
 import Input from '@/components/ui/Input';
-import { getCampaignById, updateCampaign } from '@/lib/api/campaigns';
+import { updateCampaign } from '@/lib/api/campaigns';
 import type { Campaign } from '@/types';
 
-export default function EditCampaignPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  const router = useRouter();
+interface EditCampaignModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  campaign: Campaign;
+  onUpdated?: (updated: Campaign) => void;
+}
 
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [campaign, setCampaign] = useState<Campaign | null>(null);
-
+export default function EditCampaignModal({ isOpen, onClose, campaign, onUpdated }: EditCampaignModalProps) {
   const [formData, setFormData] = useState({
     title: '',
     category: 'General',
@@ -25,39 +25,57 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
     endDate: '',
     description: '',
   });
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  const isPublished = campaign.status === 'active' || campaign.status === 'paused';
+
+  // Sync form whenever the modal opens or the campaign changes
   useEffect(() => {
-    getCampaignById(id)
-      .then((data) => {
-        setCampaign(data);
-        setFormData({
-          title: data.title ?? '',
-          category: data.category ?? 'General',
-          goalAmount: String(data.goalAmount ?? ''),
-          startDate: data.startDate ? data.startDate.slice(0, 10) : '',
-          endDate: data.endDate ? data.endDate.slice(0, 10) : '',
-          description: data.description ?? '',
-        });
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [id]);
+    if (isOpen) {
+      setFormData({
+        title: campaign.title ?? '',
+        category: campaign.category ?? 'General',
+        goalAmount: String(campaign.goalAmount ?? ''),
+        startDate: campaign.startDate ? campaign.startDate.slice(0, 10) : '',
+        endDate: campaign.endDate ? campaign.endDate.slice(0, 10) : '',
+        description: campaign.description ?? '',
+      });
+      setError(null);
+    }
+  }, [isOpen, campaign]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleClose = () => {
+    setShowConfirm(false);
+    setError(null);
+    onClose();
+  };
+
+  const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isPublished) {
+      setShowConfirm(true);
+    } else {
+      void doSave();
+    }
+  };
+
+  const doSave = async () => {
     setError(null);
     setSubmitting(true);
     try {
-      await updateCampaign(id, {
+      const updated = await updateCampaign(campaign.id, {
         title: formData.title,
         description: formData.description,
         category: formData.category,
         goalAmount: Number(formData.goalAmount),
         startDate: formData.startDate,
         endDate: formData.endDate || undefined,
-        status: campaign?.status,
+        status: campaign.status,
       });
-      router.push(`/campaigns/${id}`);
+      onUpdated?.(updated);
+      handleClose();
     } catch {
       setError('Failed to update campaign. Please try again.');
     } finally {
@@ -65,38 +83,15 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
     }
   };
 
-  if (loading) {
-    return <div className="flex items-center justify-center h-[300px] text-[var(--neutral-500)]">Loading...</div>;
-  }
-
-  if (!campaign) {
-    return (
-      <div className="flex flex-col gap-[16px]">
-        <Link href="/campaigns" className="flex items-center gap-[8px] text-[14px] text-[var(--grey-800)]">
-          <ChevronLeftIcon size={16} /> Back
-        </Link>
-        <p className="text-[var(--neutral-500)]">Campaign not found.</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col gap-[24px]">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-[24px] font-semibold text-[#1F1F1F] font-inter">Edit Campaign</h1>
-        <Link
-          href={`/campaigns/${id}`}
-          className="flex items-center gap-[8px] bg-white border border-[var(--border-01)] text-[var(--grey-800)] px-[16px] py-[8px] rounded-[8px] hover:bg-[#fafafa] transition-colors shadow-sm font-medium text-[14px]"
-        >
-          <ChevronLeftIcon size={16} />
-          <span>Back</span>
-        </Link>
-      </div>
+    <>
+      <Modal isOpen={isOpen && !showConfirm} onClose={handleClose} className="max-w-[700px] w-full">
+        <div className="flex items-center justify-between p-[24px] border-b border-[var(--border-01)]">
+          <h2 className="text-[20px] font-semibold text-[var(--grey-800)] font-inter">Edit Campaign</h2>
+          <ModalCloseButton onClick={handleClose} />
+        </div>
 
-      {/* Form Card */}
-      <div className="rounded-[16px] border border-[var(--border-01)] p-[24px]">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-[24px]">
+        <form className="p-[24px] flex flex-col gap-[24px]" onSubmit={handleFormSubmit}>
 
           {/* Title */}
           <div className="flex flex-col gap-[8px]">
@@ -137,7 +132,7 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
                   placeholder="0"
                   min="1"
                   required
-                  className="form-field h-[48px] pl-[32px]"
+                  className="form-field h-[48px] pl-[36px]"
                   value={formData.goalAmount}
                   onChange={(e) => setFormData({ ...formData, goalAmount: e.target.value })}
                 />
@@ -182,14 +177,16 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
 
           {error && <p className="text-[13px] text-[#f64c4c]">{error}</p>}
 
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-[16px] pt-[8px] border-t border-[var(--border-01)]">
-            <Link
-              href={`/campaigns/${id}`}
-              className="px-[20px] py-[10px] text-[14px] font-medium text-[var(--grey-800)] bg-white border border-[var(--border-01)] rounded-[8px] hover:bg-[var(--neutral-50)] transition-colors"
+          {/* Action Buttons */}
+          <div className="flex items-center justify-end gap-[16px] mt-2 pt-2 border-t border-[var(--border-01)]">
+            <button
+              type="button"
+              onClick={handleClose}
+              disabled={submitting}
+              className="px-[20px] py-[10px] text-[14px] font-medium text-[var(--grey-800)] bg-white border border-[var(--border-01)] rounded-[8px] hover:bg-[var(--neutral-50)] transition-colors disabled:opacity-50"
             >
               Cancel
-            </Link>
+            </button>
             <button
               type="submit"
               disabled={submitting}
@@ -199,7 +196,21 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      </Modal>
+
+      <ConfirmModal
+        isOpen={showConfirm}
+        eventType="upcoming"
+        title="Save Changes to Published Campaign?"
+        description="This campaign is currently live. Editing it will update the details visible to donors. Please confirm you want to proceed."
+        confirmLabel="Save Changes"
+        submittingLabel="Saving..."
+        confirmVariant="primary"
+        iconNode={<EditIcon size={24} className="text-white" />}
+        iconContainerClassName="bg-[var(--brand)] border-[#bbf7d0]"
+        onClose={() => setShowConfirm(false)}
+        onConfirm={doSave}
+      />
+    </>
   );
 }

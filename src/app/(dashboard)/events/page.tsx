@@ -5,19 +5,21 @@ import {
     PlusIcon,
     GridViewIcon,
     CalendarViewIcon,
-    EditIcon,
-    EyeIcon,
     ChevronDownIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
     ContentSwitcher,
+    ConfirmModal,
 } from '@/components/ui';
+import type { EventConfirmType } from '@/components/ui';
+import { Eye, Edit, Trash, Ban, Send } from 'lucide-react';
 import type { Event as EventType, Announcement } from '@/types';
 import CalendarView from '@/components/dashboard/CalendarView';
 import AddEventModal from '@/components/dashboard/AddEventModal';
 import AddAnnouncementModal from '@/components/dashboard/AddAnnouncementModal';
+import AnnouncementViewModal from '@/components/dashboard/AnnouncementViewModal';
 import EventDetailsModal from '@/components/dashboard/EventDetailsModal';
-import { getEvents, deleteEvent } from '@/lib/api/events';
+import { getEvents, cancelEvent, deleteEvent } from '@/lib/api/events';
 import { getAnnouncements, deleteAnnouncement } from '@/lib/api/announcements';
 
 // Date/Time helper functions
@@ -41,17 +43,31 @@ function formatTime(isoString: string) {
     }
 }
 
+// Maps the backend event.status enum to the ConfirmModal's eventType variant.
+function statusToConfirmType(status: string | undefined): EventConfirmType {
+    switch ((status || '').toLowerCase()) {
+        case 'cancelled':
+            return 'cancelled';
+        case 'draft':
+            return 'draft';
+        case 'past':
+        case 'completed':
+        case 'sent':
+            return 'past';
+        case 'published':
+        default:
+            return 'upcoming';
+    }
+}
+
 // Time filter options
 type TimeFilterOption = 'ALL' | 'Upcoming' | 'Ongoing' | 'Past';
-type AnnouncementTimeFilterOption = 'ALL' | 'Upcoming' | 'Past';
-
 const EVENT_TIME_OPTIONS: TimeFilterOption[] = ['ALL', 'Upcoming', 'Ongoing', 'Past'];
-const ANNOUNCEMENT_TIME_OPTIONS: AnnouncementTimeFilterOption[] = ['ALL', 'Upcoming', 'Past'];
 
 export default function EventsPage() {
     const [activeTab, setActiveTab] = useState<'events' | 'announcements'>('events');
     const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
-    
+
     // --- Events State ---
     const [events, setEvents] = useState<EventType[]>([]);
     const [eventsLoading, setEventsLoading] = useState(false);
@@ -59,19 +75,16 @@ export default function EventsPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [eventsPage, setEventsPage] = useState(1);
     const [eventsPagination, setEventsPagination] = useState({ totalPages: 1, totalElements: 0, size: 10 });
-    
+
     // --- Time Filter State ---
     const [timeFilter, setTimeFilter] = useState<TimeFilterOption>('ALL');
     const [timeDropdownOpen, setTimeDropdownOpen] = useState(false);
-    const [announcementTimeFilter, setAnnouncementTimeFilter] = useState<AnnouncementTimeFilterOption>('ALL');
-    const [announcementTimeDropdownOpen, setAnnouncementTimeDropdownOpen] = useState(false);
     const timeDropdownRef = useRef<HTMLDivElement>(null);
-    const announcementTimeDropdownRef = useRef<HTMLDivElement>(null);
 
     // --- Announcements State ---
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [announcementsLoading, setAnnouncementsLoading] = useState(false);
-    const [announcementFilter, setAnnouncementFilter] = useState<'All' | 'Scheduled' | 'Sent'>('All');
+    const [announcementFilter, setAnnouncementFilter] = useState<'All' | 'Scheduled' | 'Drafts' | 'Sent'>('All');
     const [announcementSearchQuery, setAnnouncementSearchQuery] = useState('');
     const [announcementsPage, setAnnouncementsPage] = useState(1);
     const [announcementsPagination, setAnnouncementsPagination] = useState({ totalPages: 1, totalElements: 0, size: 10 });
@@ -82,15 +95,20 @@ export default function EventsPage() {
     const [editingEvent, setEditingEvent] = useState<EventType | null>(null);
     const [viewEvent, setViewEvent] = useState<EventType | null>(null);
     const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
+    const [viewingAnnouncement, setViewingAnnouncement] = useState<Announcement | null>(null);
+    const [cancelTarget, setCancelTarget] = useState<EventType | null>(null);
+    const [deleteEventTarget, setDeleteEventTarget] = useState<EventType | null>(null);
+
+    // --- Announcement Confirmation State ---
+    const [deleteAnnouncementTarget, setDeleteAnnouncementTarget] = useState<Announcement | null>(null);
+    const [pendingAnnouncementUpdate, setPendingAnnouncementUpdate] = useState<(() => Promise<void>) | null>(null);
+    const [pendingAnnouncementSend, setPendingAnnouncementSend] = useState<(() => Promise<void>) | null>(null);
 
     // --- Click outside handler for time dropdowns ---
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             if (timeDropdownRef.current && !timeDropdownRef.current.contains(event.target as Node)) {
                 setTimeDropdownOpen(false);
-            }
-            if (announcementTimeDropdownRef.current && !announcementTimeDropdownRef.current.contains(event.target as Node)) {
-                setAnnouncementTimeDropdownOpen(false);
             }
         }
         document.addEventListener('mousedown', handleClickOutside);
@@ -167,6 +185,7 @@ export default function EventsPage() {
         try {
             let statusParam;
             if (announcementFilter === 'Scheduled') statusParam = 'scheduled';
+            if (announcementFilter === 'Drafts') statusParam = 'draft';
             if (announcementFilter === 'Sent') statusParam = 'sent';
 
             const response = await getAnnouncements({
@@ -176,27 +195,12 @@ export default function EventsPage() {
                 status: statusParam as any,
             });
 
-             let processedAnnouncements = response.content.map(ann => ({
+            const processedAnnouncements = response.content.map(ann => ({
                 ...ann,
                 // Map Backend DTO field "scheduledAt" to "date" and "time" for UI table
                 date: ann.scheduledAt ? formatDate(ann.scheduledAt) : (ann.createdAt ? formatDate(ann.createdAt) : ''),
                 time: ann.scheduledAt ? formatTime(ann.scheduledAt) : (ann.createdAt ? formatTime(ann.createdAt) : ''),
             }));
-
-            // Client-side time filtering for announcements (backend doesn't support startDate/endDate)
-            if (announcementTimeFilter === 'Upcoming') {
-                const now = new Date();
-                processedAnnouncements = processedAnnouncements.filter(ann => {
-                    const annDate = ann.scheduledAt ? new Date(ann.scheduledAt) : (ann.createdAt ? new Date(ann.createdAt) : null);
-                    return annDate && annDate > now;
-                });
-            } else if (announcementTimeFilter === 'Past') {
-                const now = new Date();
-                processedAnnouncements = processedAnnouncements.filter(ann => {
-                    const annDate = ann.scheduledAt ? new Date(ann.scheduledAt) : (ann.createdAt ? new Date(ann.createdAt) : null);
-                    return annDate && annDate <= now;
-                });
-            }
 
             setAnnouncements(processedAnnouncements);
             setAnnouncementsPagination({
@@ -210,7 +214,7 @@ export default function EventsPage() {
         } finally {
             setAnnouncementsLoading(false);
         }
-    }, [announcementsPage, announcementSearchQuery, announcementFilter, announcementTimeFilter]);
+    }, [announcementsPage, announcementSearchQuery, announcementFilter]);
 
     // --- Fetch Triggers ---
     useEffect(() => {
@@ -245,7 +249,7 @@ export default function EventsPage() {
     };
 
     const handleEditEvent = (event: EventType) => {
-        if (viewEvent) setViewEvent(null); 
+        if (viewEvent) setViewEvent(null);
         setEditingEvent(event);
         setIsAddModalOpen(true);
     };
@@ -254,9 +258,38 @@ export default function EventsPage() {
         setViewEvent(event);
     };
 
-    const handleDeleteEvent = async (id: string) => {
-        await deleteEvent(id);
-        fetchEvents();
+    const requestCancelEvent = (event: EventType) => {
+        // Closing the details modal first keeps focus management clean.
+        if (viewEvent) setViewEvent(null);
+        setCancelTarget(event);
+    };
+
+    const handleConfirmCancelEvent = async () => {
+        if (!cancelTarget?.id) return;
+        try {
+            await cancelEvent(cancelTarget.id);
+            fetchEvents();
+        } catch (err) {
+            console.error("Failed to cancel event", err);
+            alert("Failed to cancel the event.");
+            throw err;
+        }
+    };
+
+    const handleConfirmDeleteEvent = async () => {
+        if (!deleteEventTarget?.id) return;
+        try {
+            await deleteEvent(deleteEventTarget.id);
+            fetchEvents();
+        } catch (err) {
+            console.error("Failed to delete event", err);
+            alert("Failed to delete the event.");
+            throw err;
+        }
+    };
+
+    const handleViewAnnouncement = (announcement: Announcement) => {
+        setViewingAnnouncement(announcement);
     };
 
     const handleEditAnnouncement = (announcement: Announcement) => {
@@ -264,16 +297,44 @@ export default function EventsPage() {
         setIsAddAnnouncementOpen(true);
     };
 
-    const handleDeleteAnnouncement = async (id: string) => {
-        if (window.confirm("Are you sure you want to delete this announcement?")) {
-            try {
-                await deleteAnnouncement(id);
-                fetchAnnouncements();
-            } catch (err) {
-                console.error("Failed to delete announcement", err);
-                alert("Failed to delete announcement.");
-            }
-        }
+    // Stage delete — shows ConfirmModal instead of window.confirm
+    const handleDeleteAnnouncement = (announcement: Announcement) => {
+        setDeleteAnnouncementTarget(announcement);
+    };
+
+    // Executed by the delete ConfirmModal on confirm
+    const handleConfirmDeleteAnnouncement = async () => {
+        if (!deleteAnnouncementTarget?.id) return;
+        await deleteAnnouncement(deleteAnnouncementTarget.id);
+        fetchAnnouncements();
+    };
+
+    // Received from AddAnnouncementModal in edit mode — close editor, queue update
+    const handleAnnouncementUpdateRequest = (performUpdate: () => Promise<void>) => {
+        setIsAddAnnouncementOpen(false);
+        setEditingAnnouncement(null);
+        setPendingAnnouncementUpdate(() => performUpdate);
+    };
+
+    // Executed by the update ConfirmModal on confirm
+    const handleConfirmAnnouncementUpdate = async () => {
+        if (!pendingAnnouncementUpdate) return;
+        await pendingAnnouncementUpdate();
+        fetchAnnouncements();
+    };
+
+    // Received from AddAnnouncementModal on "Send Now" — close editor, queue send
+    const handleAnnouncementSendRequest = (performSend: () => Promise<void>) => {
+        setIsAddAnnouncementOpen(false);
+        setEditingAnnouncement(null);
+        setPendingAnnouncementSend(() => performSend);
+    };
+
+    // Executed by the send ConfirmModal on confirm
+    const handleConfirmAnnouncementSend = async () => {
+        if (!pendingAnnouncementSend) return;
+        await pendingAnnouncementSend();
+        fetchAnnouncements();
     };
 
     const handleCloseAddModal = () => {
@@ -300,7 +361,25 @@ export default function EventsPage() {
     const announcementsRangeStart = announcementsPagination.totalElements === 0 ? 0 : (announcementsPage - 1) * announcementsPagination.size + 1;
     const announcementsRangeEnd = Math.min(announcementsPage * announcementsPagination.size, announcementsPagination.totalElements);
 
-    const displayEvents = events;
+    const displayEvents = events.filter(event => {
+        if (!searchQuery.trim()) return true;
+        const q = searchQuery.trim().toLowerCase();
+        return (
+            event.title?.toLowerCase().includes(q) ||
+            (event as any).speaker?.toLowerCase().includes(q) ||
+            event.venue?.toLowerCase().includes(q)
+        );
+    });
+
+    const displayAnnouncements = announcements.filter(ann => {
+        if (!announcementSearchQuery.trim()) return true;
+        const q = announcementSearchQuery.trim().toLowerCase();
+        return (
+            ann.title?.toLowerCase().includes(q) ||
+            (ann.message || ann.description || '').toLowerCase().includes(q)
+        );
+    });
+
     const showEmptyState = displayEvents.length === 0 && !eventsLoading;
 
     return (
@@ -367,11 +446,10 @@ export default function EventsPage() {
                                         <button
                                             id="events-time-filter-trigger"
                                             onClick={() => setTimeDropdownOpen(!timeDropdownOpen)}
-                                            className={`flex items-center gap-[8px] bg-white border border-solid px-[12px] py-[8px] rounded-[12px] h-[42px] cursor-pointer transition-all duration-200 hover:shadow-sm ${
-                                                timeFilter !== 'ALL'
+                                            className={`flex items-center gap-[8px] bg-white border border-solid px-[12px] py-[8px] rounded-[12px] h-[42px] cursor-pointer transition-all duration-200 hover:shadow-sm ${timeFilter !== 'ALL'
                                                     ? 'border-[rgba(7,119,52,0.5)]'
                                                     : 'border-[rgba(7,119,52,0.1)]'
-                                            }`}
+                                                }`}
                                         >
                                             <span className="font-inter font-medium text-[12px] leading-[18px] text-[#666d80] whitespace-nowrap">
                                                 Time: {timeFilter === 'ALL' ? 'ALL' : timeFilter.toLowerCase()}
@@ -398,15 +476,12 @@ export default function EventsPage() {
                                                             setTimeDropdownOpen(false);
                                                             setEventsPage(1);
                                                         }}
-                                                        className={`w-full text-left px-[12px] py-[8px] font-inter font-normal text-[12px] transition-colors duration-150 ${
-                                                            timeFilter === option
+                                                        className={`w-full text-left px-[12px] py-[8px] font-inter font-normal text-[12px] transition-colors duration-150 ${timeFilter === option
                                                                 ? 'bg-[#077734] text-white'
                                                                 : 'text-[#666d80] hover:bg-[rgba(7,119,52,0.05)]'
-                                                        } ${
-                                                            index === EVENT_TIME_OPTIONS.length - 1 ? 'rounded-b-[12px]' : ''
-                                                        } ${
-                                                            index === 0 ? 'rounded-t-[12px]' : ''
-                                                        }`}
+                                                            } ${index === EVENT_TIME_OPTIONS.length - 1 ? 'rounded-b-[12px]' : ''
+                                                            } ${index === 0 ? 'rounded-t-[12px]' : ''
+                                                            }`}
                                                     >
                                                         Time: {option}
                                                     </button>
@@ -432,10 +507,10 @@ export default function EventsPage() {
                                             className={`flex items-center justify-center px-[12px] py-[6px] rounded-[8px] transition-colors ${viewMode === 'list' ? 'bg-[rgba(7,119,52,0.1)]' : 'hover:bg-gray-50'}`}
                                         >
                                             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M6.75 2.25H2.25V6.75H6.75V2.25Z" stroke={viewMode === 'list' ? "#077734" : "#666d80"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                                <path d="M15.75 2.25H11.25V6.75H15.75V2.25Z" stroke={viewMode === 'list' ? "#077734" : "#666d80"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                                <path d="M15.75 11.25H11.25V15.75H15.75V11.25Z" stroke={viewMode === 'list' ? "#077734" : "#666d80"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                                <path d="M6.75 11.25H2.25V15.75H6.75V11.25Z" stroke={viewMode === 'list' ? "#077734" : "#666d80"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                                <path d="M6.75 2.25H2.25V6.75H6.75V2.25Z" stroke={viewMode === 'list' ? "#077734" : "#666d80"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M15.75 2.25H11.25V6.75H15.75V2.25Z" stroke={viewMode === 'list' ? "#077734" : "#666d80"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M15.75 11.25H11.25V15.75H15.75V11.25Z" stroke={viewMode === 'list' ? "#077734" : "#666d80"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M6.75 11.25H2.25V15.75H6.75V11.25Z" stroke={viewMode === 'list' ? "#077734" : "#666d80"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                             </svg>
                                         </button>
                                         <button
@@ -443,16 +518,16 @@ export default function EventsPage() {
                                             className={`flex items-center justify-center px-[12px] py-[6px] rounded-[8px] transition-colors ${(viewMode as string) === 'calendar' ? 'bg-[rgba(7,119,52,0.1)]' : 'hover:bg-gray-50'}`}
                                         >
                                             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M6 1.5V3.75" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                                                <path d="M12 1.5V3.75" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                                                <path d="M2.625 6.81738H15.375" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                                                <path d="M15.75 6.375V12.75C15.75 15 14.625 16.5 12 16.5H6C3.375 16.5 2.25 15 2.25 12.75V6.375C2.25 4.125 3.375 2.625 6 2.625H12C14.625 2.625 15.75 4.125 15.75 6.375Z" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
-                                                <path d="M11.7709 10.2748H11.7776" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                                <path d="M11.7709 12.5248H11.7776" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                                <path d="M8.99645 10.2748H9.00318" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                                <path d="M8.99645 12.5248H9.00318" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                                <path d="M6.22011 10.2748H6.22684" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                                <path d="M6.22011 12.5248H6.22684" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                <path d="M6 1.5V3.75" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M12 1.5V3.75" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M2.625 6.81738H15.375" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M15.75 6.375V12.75C15.75 15 14.625 16.5 12 16.5H6C3.375 16.5 2.25 15 2.25 12.75V6.375C2.25 4.125 3.375 2.625 6 2.625H12C14.625 2.625 15.75 4.125 15.75 6.375Z" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M11.7709 10.2748H11.7776" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M11.7709 12.5248H11.7776" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M8.99645 10.2748H9.00318" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M8.99645 12.5248H9.00318" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M6.22011 10.2748H6.22684" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path d="M6.22011 12.5248H6.22684" stroke={(viewMode as string) === 'calendar' ? "#077734" : "#666d80"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                             </svg>
                                         </button>
                                     </div>
@@ -476,67 +551,87 @@ export default function EventsPage() {
                                         </div>
                                     </div>
                                 ) : (
-                                <table className="w-full text-left border-collapse">
-                                    <thead className="bg-[#fafbfb] border-b border-t border-[var(--border-01)] h-[48px]">
-                                        <tr>
-                                            <th className="px-[16px] py-[14px] font-inter font-medium text-[12px] text-[#666d80] uppercase">Title</th>
-                                            <th className="px-[16px] py-[14px] font-inter font-medium text-[12px] text-[#666d80] uppercase">Date & Time</th>
-                                            <th className="px-[16px] py-[14px] font-inter font-medium text-[12px] text-[#666d80] uppercase">Status</th>
-                                            <th className="px-[16px] py-[14px] font-inter font-medium text-[12px] text-[#666d80] uppercase">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-none bg-white">
-                                        {displayEvents.map((event: any) => (
-                                            <tr key={event.id} className="group hover:bg-[#fafbfb] transition-colors duration-150 border-b border-[#e2e8f0] last:border-0">
-                                                <td className="h-[70px] px-[16px] py-[14px] font-['Inter'] font-medium text-[14px] text-[#666d80]">
-                                                    {event.title}
-                                                </td>
-                                                <td className="h-[70px] px-[16px] py-[14px]">
-                                                    <div className="flex flex-col gap-[4px]">
-                                                        <span className="font-['Inter'] font-medium text-[14px] text-[#666d80]">
-                                                            {event.date} | {event.startTime}
-                                                        </span>
-                                                        <span className={`font-['Inter'] font-normal text-[12px] ${
-                                                            event.timeStatus === 'Upcoming' ? 'text-[#47b881]' : 
-                                                            event.timeStatus === 'Past' ? 'text-[#9ca3af]' : 'text-[#ffad0d]'
-                                                        }`}>
-                                                            {event.timeStatus}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="h-[70px] px-[16px] py-[14px]">
-                                                    <span className={`
+                                    <table className="w-full text-left border-collapse">
+                                        <thead className="bg-[#fafbfb] border-b border-t border-[var(--border-01)] h-[48px]">
+                                            <tr>
+                                                <th className="px-[16px] py-[14px] font-inter font-medium text-[12px] text-[#666d80] uppercase">Title</th>
+                                                <th className="px-[16px] py-[14px] font-inter font-medium text-[12px] text-[#666d80] uppercase">Date & Time</th>
+                                                <th className="px-[16px] py-[14px] font-inter font-medium text-[12px] text-[#666d80] uppercase">Status</th>
+                                                <th className="px-[16px] py-[14px] font-inter font-medium text-[12px] text-[#666d80] uppercase">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-none bg-white">
+                                            {displayEvents.map((event: any) => (
+                                                <tr key={event.id} className="group hover:bg-[#fafbfb] transition-colors duration-150 border-b border-[#e2e8f0] last:border-0">
+                                                    <td className="h-[70px] px-[16px] py-[14px] font-['Inter'] font-medium text-[14px] text-[#666d80]">
+                                                        {event.title}
+                                                    </td>
+                                                    <td className="h-[70px] px-[16px] py-[14px]">
+                                                        <div className="flex flex-col gap-[4px]">
+                                                            <span className="font-['Inter'] font-medium text-[14px] text-[#666d80]">
+                                                                {event.date} | {event.startTime}
+                                                            </span>
+                                                            <span className={`font-['Inter'] font-normal text-[12px] ${event.timeStatus === 'Upcoming' ? 'text-[#47b881]' :
+                                                                    event.timeStatus === 'Past' ? 'text-[#9ca3af]' : 'text-[#ffad0d]'
+                                                                }`}>
+                                                                {event.timeStatus}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="h-[70px] px-[16px] py-[14px]">
+                                                        <span className={`
                                                 inline-flex items-center px-[8px] py-[4px] rounded-[8px] text-[12px] font-normal capitalize border bg-white
                                                 ${event.status?.toLowerCase() === 'published' ? 'text-[#47b881] border-[#6bc497]' : ''}
                                                 ${event.status?.toLowerCase() === 'cancelled' ? 'text-[#f64c4c] border-[#eb6f70]' : ''}
                                                 ${event.status?.toLowerCase() === 'draft' ? 'text-[#ffad0d] border-[#ffc62b]' : ''}
                                                 ${event.status?.toLowerCase() === 'completed' ? 'text-[#47b881] border-[#6bc497]' : ''}
                                             `}
-                                                        style={{ fontFamily: "'Inter', sans-serif" }}
-                                                    >
-                                                        {event.status?.toLowerCase() === 'draft' ? 'Drafts' : event.status}
-                                                    </span>
-                                                </td>
-                                                <td className="h-[70px] px-[16px] py-[14px]">
-                                                    <div className="flex items-center gap-[12px]">
-                                                        <button
-                                                            onClick={() => handleViewEvent(event)}
-                                                            className="text-[var(--grey-100)] hover:text-[var(--brand)] transition-colors p-1 hover:bg-[var(--brand-05)] rounded"
+                                                            style={{ fontFamily: "'Inter', sans-serif" }}
                                                         >
-                                                            <EyeIcon size={20} className="stroke-[1.5]" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleEditEvent(event)}
-                                                            className="text-[var(--grey-100)] hover:text-[var(--brand)] transition-colors p-1 hover:bg-[var(--brand-05)] rounded"
-                                                        >
-                                                            <EditIcon size={20} className="stroke-[1.5]" />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                                            {event.status?.toLowerCase() === 'draft' ? 'Drafts' : event.status}
+                                                        </span>
+                                                    </td>
+                                                    <td className="h-[70px] px-[16px] py-[14px]">
+                                                        <div className="flex items-center gap-[12px]">
+                                                            <button
+                                                                onClick={() => handleViewEvent(event)}
+                                                                className="text-[#666d80] hover:text-[var(--brand)] transition-colors p-1 hover:bg-[var(--brand-05)] rounded"
+                                                                title="View Event"
+                                                            >
+                                                                <Eye size={20} strokeWidth={1.5} />
+                                                            </button>
+                                                            {event.status?.toLowerCase() === 'cancelled' ? (
+                                                                <button
+                                                                    onClick={() => setDeleteEventTarget(event)}
+                                                                    className="text-[#666d80] hover:text-[#f64c4c] transition-colors p-1 hover:bg-[#f64c4c]/10 rounded"
+                                                                    title="Delete Event"
+                                                                >
+                                                                    <Trash size={20} strokeWidth={1.5} />
+                                                                </button>
+                                                            ) : (
+                                                                <>
+                                                                    <button
+                                                                        onClick={() => handleEditEvent(event)}
+                                                                        className="text-[#666d80] hover:text-[var(--brand)] transition-colors p-1 hover:bg-[var(--brand-05)] rounded"
+                                                                        title="Edit Event"
+                                                                    >
+                                                                        <Edit size={20} strokeWidth={1.5} />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => requestCancelEvent(event)}
+                                                                        className="text-[#666d80] hover:text-[#f64c4c] transition-colors p-1 hover:bg-[#f64c4c]/10 rounded"
+                                                                        title="Cancel Event"
+                                                                    >
+                                                                        <Ban size={20} strokeWidth={1.5} />
+                                                                    </button>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 )}
 
                                 {/* Pagination Footer */}
@@ -588,12 +683,12 @@ export default function EventsPage() {
                     {/* Controls */}
                     <div className="flex justify-between items-center mb-[16px] h-[40px]">
                         <div className="flex items-center">
-                            {(['All', 'Scheduled'] as const).map((filter, index, arr) => (
+                            {(['All', 'Sent', 'Scheduled', 'Drafts'] as const).map((filter, index, arr) => (
                                 <button
                                     key={filter}
                                     onClick={() => { setAnnouncementFilter(filter); setAnnouncementsPage(1); }}
                                     className={`
-                                        h-[40px] px-[16px] py-[10px] font-inter text-[14px] 
+                                        h-[40px] px-[16px] py-[10px] font-inter text-[14px]
                                         border border-[var(--border-01)]
                                         transition-all duration-200 flex items-center justify-center gap-[8px]
                                         ${announcementFilter === filter ? 'font-bold text-white bg-[var(--brand)] z-10 hover:bg-[#065d29]' : 'font-normal text-[var(--grey-800)] bg-white hover:bg-[rgba(7,119,52,0.05)] hover:text-[var(--brand)]'}
@@ -611,58 +706,6 @@ export default function EventsPage() {
                         </div>
 
                         <div className="flex items-center gap-[7px]">
-                            {/* Announcement Time Filter Dropdown */}
-                            <div className="relative" ref={announcementTimeDropdownRef}>
-                                <button
-                                    id="announcements-time-filter-trigger"
-                                    onClick={() => setAnnouncementTimeDropdownOpen(!announcementTimeDropdownOpen)}
-                                    className={`flex items-center gap-[8px] bg-white border border-solid px-[12px] py-[8px] rounded-[12px] h-[42px] cursor-pointer transition-all duration-200 hover:shadow-sm ${
-                                        announcementTimeFilter !== 'ALL'
-                                            ? 'border-[rgba(7,119,52,0.5)]'
-                                            : 'border-[rgba(7,119,52,0.1)]'
-                                    }`}
-                                >
-                                    <span className="font-inter font-medium text-[12px] leading-[18px] text-[#666d80] whitespace-nowrap">
-                                        Time: {announcementTimeFilter === 'ALL' ? 'ALL' : announcementTimeFilter.toLowerCase()}
-                                    </span>
-                                    <svg
-                                        width="18" height="18" viewBox="0 0 18 18" fill="none"
-                                        className={`transition-transform duration-200 ${announcementTimeDropdownOpen ? 'rotate-180' : ''}`}
-                                    >
-                                        <path d="M14.94 6.71252L10.05 11.6025C9.4725 12.18 8.5275 12.18 7.95 11.6025L3.06 6.71252" stroke="#666d80" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </button>
-                                {/* Dropdown Menu */}
-                                {announcementTimeDropdownOpen && (
-                                    <div
-                                        id="announcements-time-filter-dropdown"
-                                        className="absolute top-[calc(100%+4px)] left-0 z-50 bg-white border border-[#e2e8f0] rounded-[12px] overflow-hidden shadow-md min-w-[160px] animate-in fade-in duration-150"
-                                    >
-                                        {ANNOUNCEMENT_TIME_OPTIONS.map((option, index) => (
-                                            <button
-                                                key={option}
-                                                id={`announcements-time-option-${option.toLowerCase()}`}
-                                                onClick={() => {
-                                                    setAnnouncementTimeFilter(option);
-                                                    setAnnouncementTimeDropdownOpen(false);
-                                                    setAnnouncementsPage(1);
-                                                }}
-                                                className={`w-full text-left px-[12px] py-[8px] font-inter font-normal text-[12px] transition-colors duration-150 ${
-                                                    announcementTimeFilter === option
-                                                        ? 'bg-[#077734] text-white'
-                                                        : 'text-[#666d80] hover:bg-[rgba(7,119,52,0.05)]'
-                                                } ${
-                                                    index === ANNOUNCEMENT_TIME_OPTIONS.length - 1 ? 'rounded-b-[12px]' : ''
-                                                } ${
-                                                    index === 0 ? 'rounded-t-[12px]' : ''
-                                                }`}
-                                            >
-                                                Time: {option}
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
                             <div className="relative w-[342px] h-[40px]">
                                 <input
                                     type="text"
@@ -680,6 +723,21 @@ export default function EventsPage() {
 
                     {/* Table */}
                     <div className="w-full overflow-hidden">
+                        {displayAnnouncements.length === 0 && !announcementsLoading ? (
+                            <div className="bg-[var(--white\/table-white,#fafbfb)] border border-[var(--white\/border,#e2e8f0)] border-dashed flex flex-col gap-[16px] items-center px-[24px] py-[80px] rounded-[24px] w-full mb-[24px]">
+                                <div className="bg-white border border-[#e2e8f0] flex items-center justify-center p-[8px] rounded-[99px] size-[48px]">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#666d80" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                </div>
+                                <div className="flex flex-col gap-[8px] items-center text-center">
+                                    <h3 className="font-['Inter'] font-bold text-[20px] text-[#36394a]">
+                                        No {announcementFilter !== 'All' ? announcementFilter.toLowerCase() + ' ' : ''}announcements found
+                                    </h3>
+                                    <p className="font-['Inter'] font-medium text-[16px] text-[#666d80] max-w-[374px]">
+                                        Try adjusting your filters or create a new announcement to get started.
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
                         <table className="w-full text-left border-collapse">
                             <thead className="bg-[#fafbfb] border-b border-t border-[var(--border-01)] h-[48px]">
                                 <tr>
@@ -691,49 +749,61 @@ export default function EventsPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-none bg-white">
-                                {announcements.map((announcement) => (
-                                        <tr key={announcement.id} className="group hover:bg-[#fafbfb] transition-colors duration-150">
-                                            <td className="h-[70px] px-[16px] py-[22px] font-inter font-medium text-[14px] text-[#666d80]">
-                                                {announcement.title}
-                                            </td>
-                                            <td className="h-[70px] px-[16px] py-[22px] font-inter font-medium text-[14px] text-[#666d80] truncate max-w-[200px]" title={announcement.message || announcement.description}>
-                                                {announcement.message || announcement.description}
-                                            </td>
-                                            <td className="h-[70px] px-[16px] py-[22px] font-inter font-medium text-[14px] text-[#666d80] whitespace-nowrap">
-                                                {announcement.date}  {announcement.time}
-                                            </td>
-                                            <td className="h-[70px] px-[16px] py-[22px]">
-                                                <span
-                                                    className={`inline-flex items-center px-[8px] py-[4px] rounded-[8px] text-[12px] capitalize border
-                                                    ${announcement.status === 'scheduled'
-                                                            ? 'text-[#ff8156] border-[#ffa487]'
-                                                            : 'text-[#47b881] border-[#6bc497]'
-                                                        }`}
-                                                    style={{ fontFamily: '"Inter", sans-serif' }}
-                                                >
-                                                    {announcement.status === 'scheduled' ? 'Scheduled' : 'Sent'}
-                                                </span>
-                                            </td>
-                                            <td className="h-[70px] px-[16px] py-[22px]">
-                                                <div className="flex items-center gap-[12px]">
-                                                    <button 
-                                                        onClick={() => handleEditAnnouncement(announcement)}
+                                {displayAnnouncements.map((announcement) => (
+                                    <tr key={announcement.id} className="group hover:bg-[#fafbfb] transition-colors duration-150">
+                                        <td className="h-[70px] px-[16px] py-[22px] font-inter font-medium text-[14px] text-[#666d80]">
+                                            {announcement.title}
+                                        </td>
+                                        <td className="h-[70px] px-[16px] py-[22px] font-inter font-medium text-[14px] text-[#666d80] truncate max-w-[200px]" title={announcement.message || announcement.description}>
+                                            {announcement.message || announcement.description}
+                                        </td>
+                                        <td className="h-[70px] px-[16px] py-[22px] font-inter font-medium text-[14px] text-[#666d80] whitespace-nowrap">
+                                            {announcement.date}  {announcement.time}
+                                        </td>
+                                        <td className="h-[70px] px-[16px] py-[22px]">
+                                            <span
+                                                className={`inline-flex items-center px-[8px] py-[4px] rounded-[8px] text-[12px] capitalize border bg-white
+                                                    ${announcement.status === 'scheduled' ? 'text-[#ff8156] border-[#ffa487]' : ''}
+                                                    ${announcement.status === 'draft' ? 'text-[#ffad0d] border-[#ffc62b]' : ''}
+                                                    ${announcement.status === 'sent' ? 'text-[#47b881] border-[#6bc497]' : ''}
+                                                `}
+                                                style={{ fontFamily: '"Inter", sans-serif' }}
+                                            >
+                                                {announcement.status === 'scheduled' ? 'Scheduled' : announcement.status === 'draft' ? 'Draft' : 'Sent'}
+                                            </span>
+                                        </td>
+                                        <td className="h-[70px] px-[16px] py-[22px]">
+                                            <div className="flex items-center gap-[12px]">
+                                                {announcement.status === 'sent' && (
+                                                    <button
+                                                        onClick={() => handleViewAnnouncement(announcement)}
                                                         className="text-[#666d80] hover:text-[var(--brand)] transition-colors p-1 hover:bg-[var(--brand-05)] rounded"
+                                                        title="View"
                                                     >
-                                                        <EditIcon size={20} />
+                                                        <Eye size={20} strokeWidth={1.5} />
                                                     </button>
-                                                    <button 
-                                                        onClick={() => handleDeleteAnnouncement(announcement.id)}
-                                                        className="text-[#666d80] hover:text-red-500 transition-colors p-1 hover:bg-red-50 rounded"
-                                                    >
-                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                                )}
+                                                <button
+                                                    onClick={() => handleEditAnnouncement(announcement)}
+                                                    className="text-[#666d80] hover:text-[var(--brand)] transition-colors p-1 hover:bg-[var(--brand-05)] rounded"
+                                                    title="Edit"
+                                                >
+                                                    <Edit size={20} strokeWidth={1.5} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteAnnouncement(announcement)}
+                                                    className="text-[#666d80] hover:text-[#f64c4c] transition-colors p-1 hover:bg-[#f64c4c]/10 rounded"
+                                                    title="Delete"
+                                                >
+                                                    <Trash size={20} strokeWidth={1.5} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
+                        )}
                     </div>
 
                     {/* Pagination Footer */}
@@ -781,12 +851,94 @@ export default function EventsPage() {
                 onClose={handleCloseViewModal}
                 event={viewEvent}
                 onEdit={handleEditEvent}
-                onDelete={handleDeleteEvent}
+                onCancelRequest={requestCancelEvent}
             />
             <AddAnnouncementModal
                 isOpen={isAddAnnouncementOpen}
                 onClose={handleCloseAddAnnouncement}
                 announcement={editingAnnouncement}
+                onUpdateRequest={handleAnnouncementUpdateRequest}
+                onSendRequest={handleAnnouncementSendRequest}
+                onDeleteRequest={() => {
+                    if (editingAnnouncement) {
+                        setIsAddAnnouncementOpen(false);
+                        setEditingAnnouncement(null);
+                        setDeleteAnnouncementTarget(editingAnnouncement);
+                    }
+                }}
+            />
+            <AnnouncementViewModal
+                isOpen={!!viewingAnnouncement}
+                onClose={() => setViewingAnnouncement(null)}
+                announcement={viewingAnnouncement}
+            />
+            <ConfirmModal
+                isOpen={!!cancelTarget}
+                eventType={statusToConfirmType(cancelTarget?.status)}
+                onClose={() => setCancelTarget(null)}
+                onConfirm={handleConfirmCancelEvent}
+            />
+            {/* Delete cancelled event confirmation */}
+            <ConfirmModal
+                isOpen={!!deleteEventTarget}
+                eventType="cancelled"
+                onClose={() => setDeleteEventTarget(null)}
+                onConfirm={handleConfirmDeleteEvent}
+                title="Delete Event?"
+                description="This cancelled event will be permanently deleted and cannot be recovered."
+                confirmLabel="Delete"
+                submittingLabel="Deleting..."
+            />
+            {/* Delete announcement confirmation */}
+            <ConfirmModal
+                isOpen={!!deleteAnnouncementTarget}
+                eventType="upcoming"
+                onClose={() => setDeleteAnnouncementTarget(null)}
+                onConfirm={handleConfirmDeleteAnnouncement}
+                title={
+                    deleteAnnouncementTarget?.status === 'sent'
+                        ? 'Delete Sent Announcement?'
+                        : deleteAnnouncementTarget?.status === 'scheduled'
+                        ? 'Delete Scheduled Announcement?'
+                        : 'Delete Draft?'
+                }
+                description={
+                    deleteAnnouncementTarget?.status === 'sent'
+                        ? 'This announcement has already been delivered to members. Deleting it will only remove it from the admin panel.'
+                        : deleteAnnouncementTarget?.status === 'scheduled'
+                        ? 'This announcement is scheduled to be sent. Deleting it will cancel delivery and permanently remove it.'
+                        : 'This draft has not been sent yet. It will be permanently deleted.'
+                }
+                confirmLabel="Delete"
+                submittingLabel="Deleting..."
+            />
+            {/* Update announcement confirmation */}
+            <ConfirmModal
+                isOpen={!!pendingAnnouncementUpdate}
+                eventType="upcoming"
+                onClose={() => setPendingAnnouncementUpdate(null)}
+                onConfirm={handleConfirmAnnouncementUpdate}
+                title="Update Announcement?"
+                description="Your changes will be saved and applied immediately."
+                confirmLabel="Update"
+                submittingLabel="Updating..."
+                confirmVariant="primary"
+                iconNode={<Edit size={24} className="text-white" strokeWidth={1.5} />}
+                iconContainerClassName="bg-[rgba(7,119,52,0.7)] border-[rgba(7,119,52,0.2)]"
+            />
+            {/* Send announcement confirmation */}
+            <ConfirmModal
+                isOpen={!!pendingAnnouncementSend}
+                eventType="upcoming"
+                onClose={() => setPendingAnnouncementSend(null)}
+                onConfirm={handleConfirmAnnouncementSend}
+                title="Send Announcement?"
+                description="This announcement will be sent immediately to all members in the Community App."
+                confirmLabel="Send Now"
+                submittingLabel="Sending..."
+                confirmVariant="primary"
+                iconNode={<Send size={24} className="text-white" strokeWidth={1.5} />}
+                iconContainerClassName="bg-[rgba(7,119,52,0.7)] border-[rgba(7,119,52,0.2)]"
             />
         </div>
     );

@@ -1,7 +1,7 @@
 'use client';
 
 import Modal from '@/components/ui/Modal';
-import { CloseIcon } from '@/components/ui/Icons';
+import ModalCloseButton from '@/components/ui/ModalCloseButton';
 import type { AdminUserResponse } from '@/types/api';
 
 interface ProfileModalProps {
@@ -27,62 +27,48 @@ export default function ProfileModal({ isOpen, onClose, onLogout, user }: Profil
         {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="font-inter font-bold text-[24px] text-[#36394a]">My Profile</h2>
-          <button
-            onClick={onClose}
-            className="w-[32px] h-[32px] rounded-[8px] bg-[rgba(47,128,237,0.05)] flex items-center justify-center hover:bg-[rgba(47,128,237,0.1)] transition-colors"
-          >
-            <CloseIcon size={20} className="text-[#36394a]" />
-          </button>
+          <ModalCloseButton onClick={onClose} />
         </div>
 
         {/* Body */}
         <div className="flex gap-[32px]">
-          {/* Left: Avatar + Logout */}
-          <div className="flex flex-col items-center gap-[24px] w-[140px] shrink-0">
-            <div className="flex flex-col items-center gap-[12px]">
-              <div className="w-[80px] h-[80px] rounded-full bg-[var(--brand)] flex items-center justify-center">
-                <span className="font-inter font-bold text-[28px] text-white">{initials}</span>
-              </div>
-              <p className="font-inter text-[16px] text-[#1f1f1f] text-center leading-[1.25]">{displayName}</p>
+          {/* Left: Avatar */}
+          <div className="flex flex-col items-center gap-[12px] w-[140px] shrink-0">
+            <div className="w-[80px] h-[80px] rounded-full bg-[var(--brand)] flex items-center justify-center">
+              <span className="font-inter font-bold text-[28px] text-white">{initials}</span>
             </div>
-
-            <button
-              onClick={() => { onLogout(); onClose(); }}
-              className="flex items-center gap-[10px] h-[44px] px-[24px] border border-[#ffccd2] rounded-[12px] hover:bg-red-50 transition-colors"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f64c4c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-              <span className="font-inter font-medium text-[14px] text-[#f64c4c]">Logout</span>
-            </button>
+            <p className="font-inter text-[16px] text-[#1f1f1f] text-center leading-[1.25]">{displayName}</p>
           </div>
 
-          {/* Right: Read-only Fields + Close */}
+          {/* Right: Read-only Fields + Actions */}
           <div className="flex flex-col gap-[24px] flex-1">
             <div className="flex flex-col gap-[20px]">
               <div className="flex flex-col gap-[8px]">
                 <label className="font-inter font-medium text-[12px] text-[#4b4b4b]">Username</label>
-                <div className="w-full h-[52px] px-[16px] py-[12px] border border-[#e2e8f0] rounded-[8px] font-inter text-[16px] text-[#4b4b4b] leading-[1.25] flex items-center bg-white">
-                  {user?.fullName || '-'}
-                </div>
+                <div className="form-field flex items-center select-text cursor-text">{user?.fullName || '-'}</div>
               </div>
               <div className="flex flex-col gap-[8px]">
                 <label className="font-inter font-medium text-[12px] text-[#4b4b4b]">Email</label>
-                <div className="w-full h-[52px] px-[16px] py-[12px] border border-[#e2e8f0] rounded-[8px] font-inter text-[16px] text-[#4b4b4b] leading-[1.25] flex items-center bg-white">
-                  {user?.email || '-'}
-                </div>
+                <div className="form-field flex items-center select-text cursor-text">{user?.email || '-'}</div>
               </div>
               <div className="flex flex-col gap-[8px]">
                 <label className="font-inter font-medium text-[12px] text-[#4b4b4b]">Mobile</label>
-                <div className="w-full h-[52px] px-[16px] py-[12px] border border-[#e2e8f0] rounded-[8px] font-inter text-[16px] text-[#4b4b4b] leading-[1.25] flex items-center bg-white">
-                  -
-                </div>
+                <div className="form-field flex items-center select-text cursor-text">-</div>
               </div>
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-[12px]">
+              <button
+                onClick={() => { onLogout(); onClose(); }}
+                className="flex items-center gap-[10px] h-[44px] px-[24px] border border-[#ffccd2] rounded-[12px] font-inter font-medium text-[14px] text-[#f64c4c] hover:bg-red-50 transition-colors"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f64c4c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                Logout
+              </button>
               <button
                 onClick={onClose}
                 className="h-[44px] px-[24px] border border-[#e2e8f0] rounded-[12px] font-inter font-medium text-[16px] text-[#4b4b4b] hover:bg-[var(--neutral-100)] transition-colors"
