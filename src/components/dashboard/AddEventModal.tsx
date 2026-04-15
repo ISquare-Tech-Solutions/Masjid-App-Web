@@ -3,7 +3,7 @@ import Modal from '@/components/ui/Modal';
 import { CloseIcon, CalendarIcon, UploadIcon } from '@/components/ui/Icons';
 import TimePicker from '@/components/ui/TimePicker';
 import type { Event } from '@/types';
-import { createEvent, updateEvent } from '@/lib/api/events';
+import { createEvent, updateEvent, notifyEvent } from '@/lib/api/events';
 
 interface AddEventModalProps {
     isOpen: boolean;
@@ -121,11 +121,25 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
                 formData.append('images', imageFile);
             }
 
+            let savedEventId: string | undefined;
+
             if (isEditMode && event?.id) {
-                await updateEvent(event.id, formData);
+                const updated = await updateEvent(event.id, formData);
+                savedEventId = updated.id;
             } else {
-                await createEvent(formData);
+                const created = await createEvent(formData);
+                savedEventId = created.id;
             }
+
+            // Send push notification when publishing
+            if (!asDraft && savedEventId) {
+                try {
+                    await notifyEvent(savedEventId);
+                } catch (notifyErr) {
+                    console.warn('Push notification failed (event saved successfully):', notifyErr);
+                }
+            }
+
             onClose(); // Parent will refresh data on close
         } catch (err: any) {
             setError(err?.message || "An error occurred while saving the event.");
