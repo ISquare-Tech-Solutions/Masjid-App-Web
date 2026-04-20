@@ -87,3 +87,17 @@ export async function cancelEvent(id: string): Promise<void> {
 export async function deleteEvent(id: string): Promise<void> {
     await del<void>(`/admin/events/${id}`);
 }
+
+export interface NotifyEventResult {
+    devicesNotified: number;
+    eventId: string;
+}
+
+/**
+ * Send a push notification for a published event to all registered devices.
+ * Only works if the event status is 'published'.
+ */
+export async function notifyEvent(id: string): Promise<NotifyEventResult> {
+    const response = await post<ApiResponse<NotifyEventResult>>(`/admin/events/${id}/notify`);
+    return response.data;
+}
