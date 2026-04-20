@@ -366,21 +366,21 @@ export default function AddAnnouncementModal({ isOpen, onClose, announcement, on
                                     </button>
                                 </>
                             ) : (
-                                /* Draft → [Delete left] | Draft | Send Now */
+                                /* Draft → [Delete left] | Cancel | Save */
                                 <>
                                     <button
-                                        onClick={handleSaveAsDraft}
+                                        onClick={onClose}
                                         disabled={isSaving}
                                         className="h-[44px] px-[24px] flex items-center justify-center border border-[var(--border-01)] rounded-[12px] font-inter font-medium text-[16px] text-[var(--grey-800)] hover:bg-gray-50 transition-colors disabled:opacity-50"
                                     >
-                                        Draft
+                                        Cancel
                                     </button>
                                     <button
-                                        onClick={handleSend}
+                                        onClick={handleSaveAsDraft}
                                         disabled={isSaving}
                                         className="h-[44px] px-[24px] flex items-center justify-center bg-[var(--brand)] rounded-[12px] font-inter font-medium text-[16px] text-white hover:bg-[#065d29] transition-colors disabled:opacity-50"
                                     >
-                                        {isSaving ? 'Sending...' : 'Send Now'}
+                                        {isSaving ? 'Saving...' : 'Save'}
                                     </button>
                                 </>
                             )
@@ -396,29 +396,14 @@ export default function AddAnnouncementModal({ isOpen, onClose, announcement, on
                                     {isSaving ? 'Saving...' : 'Save'}
                                 </button>
                             ) : (
-                                /* Default → Save as Draft | Schedule | Send Now */
-                                <>
-                                    <button
-                                        onClick={handleSaveAsDraft}
-                                        disabled={isSaving}
-                                        className="h-[44px] px-[24px] flex items-center justify-center border border-[var(--border-01)] rounded-[12px] font-inter font-medium text-[16px] text-[var(--grey-800)] hover:bg-gray-50 transition-colors disabled:opacity-50"
-                                    >
-                                        Save as Draft
-                                    </button>
-                                    <button
-                                        onClick={handleScheduleClick}
-                                        className="h-[44px] px-[24px] flex items-center justify-center border border-[var(--border-01)] rounded-[12px] font-inter font-medium text-[16px] text-[var(--grey-800)] hover:bg-gray-50 transition-colors"
-                                    >
-                                        Schedule
-                                    </button>
-                                    <button
-                                        onClick={handleSend}
-                                        disabled={isSaving}
-                                        className="h-[44px] px-[24px] flex items-center justify-center bg-[var(--brand)] rounded-[12px] font-inter font-medium text-[16px] text-white hover:bg-[#065d29] transition-colors disabled:opacity-50"
-                                    >
-                                        {isSaving ? 'Sending...' : 'Send Now'}
-                                    </button>
-                                </>
+                                /* Default → Save */
+                                <button
+                                    onClick={handleSaveAsDraft}
+                                    disabled={isSaving}
+                                    className="h-[44px] px-[24px] flex items-center justify-center bg-[var(--brand)] rounded-[12px] font-inter font-medium text-[16px] text-white hover:bg-[#065d29] transition-colors disabled:opacity-50"
+                                >
+                                    {isSaving ? 'Saving...' : 'Save'}
+                                </button>
                             )
                         )}
                     </div>

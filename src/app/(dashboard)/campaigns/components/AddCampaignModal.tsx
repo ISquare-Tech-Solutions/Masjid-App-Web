@@ -50,7 +50,7 @@ export default function AddCampaignModal({ isOpen, onClose, onCreated }: AddCamp
         category: formData.category,
         goalAmount: Number(formData.goalAmount),
         startDate: formData.startDate,
-        endDate: formData.endDate || undefined,
+        endDate: formData.endDate,
         status: 'draft',
       });
       onCreated?.();
@@ -72,7 +72,7 @@ export default function AddCampaignModal({ isOpen, onClose, onCreated }: AddCamp
         category: formData.category,
         goalAmount: Number(formData.goalAmount),
         startDate: formData.startDate,
-        endDate: formData.endDate || undefined,
+        endDate: formData.endDate,
         status: 'active',
       });
       onCreated?.();
@@ -127,16 +127,22 @@ export default function AddCampaignModal({ isOpen, onClose, onCreated }: AddCamp
 
               <div className="flex flex-col gap-[8px] flex-1">
                 <label className="text-[14px] font-medium text-[var(--grey-800)]">Target Amount</label>
-                <div className="relative">
-                  <span className="absolute left-[16px] top-1/2 -translate-y-1/2 text-[var(--grey-800)] font-medium">£</span>
+                <div className="flex items-center h-[48px] border border-[var(--border-01)] rounded-[12px] overflow-hidden transition-all duration-150 focus-within:border-transparent focus-within:shadow-[0_0_0_2px_var(--brand)]">
+                  <span className="flex items-center justify-center h-full px-[14px] text-[14px] font-medium text-[var(--grey-800)] border-r border-[var(--border-01)] bg-transparent select-none shrink-0">
+                    £
+                  </span>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     placeholder="0"
-                    min="1"
                     required
-                    className="form-field h-[48px] pl-[40px]"
+                    className="flex-1 h-full px-[12px] outline-none bg-transparent text-[14px] text-[var(--grey-800)] placeholder:text-[var(--neutral-500)]"
                     value={formData.goalAmount}
-                    onChange={(e) => setFormData({ ...formData, goalAmount: e.target.value })}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, '');
+                      setFormData({ ...formData, goalAmount: val });
+                    }}
                   />
                 </div>
               </div>
@@ -155,9 +161,10 @@ export default function AddCampaignModal({ isOpen, onClose, onCreated }: AddCamp
                 />
               </div>
               <div className="flex flex-col gap-[8px] flex-1">
-                <label className="text-[14px] font-medium text-[var(--grey-800)]">End Date <span className="text-[var(--neutral-400)] font-normal">(optional)</span></label>
+                <label className="text-[14px] font-medium text-[var(--grey-800)]">End Date</label>
                 <input
                   type="date"
+                  required
                   className="form-field h-[48px]"
                   value={formData.endDate}
                   min={formData.startDate}
@@ -193,16 +200,9 @@ export default function AddCampaignModal({ isOpen, onClose, onCreated }: AddCamp
                 type="button"
                 disabled={submitting}
                 onClick={handleSaveDraft}
-                className="px-[20px] py-[10px] text-[14px] font-medium text-[var(--grey-800)] bg-white border border-[var(--border-01)] rounded-[8px] hover:bg-[var(--neutral-50)] transition-colors disabled:opacity-50"
-              >
-                Save as Draft
-              </button>
-              <button
-                type="submit"
-                disabled={submitting}
                 className="px-[20px] py-[10px] text-[14px] font-medium text-white bg-[var(--brand)] rounded-[8px] hover:bg-[#046c4e] transition-colors disabled:opacity-50"
               >
-                Create Campaign
+                {submitting ? 'Saving...' : 'Save'}
               </button>
             </div>
           </form>

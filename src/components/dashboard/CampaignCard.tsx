@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowUpRightIcon } from '@/components/ui/Icons';
+import { useRouter } from 'next/navigation';
 import type { Campaign } from '@/types';
 
 interface CampaignCardProps {
@@ -8,6 +8,7 @@ interface CampaignCardProps {
 }
 
 export default function CampaignCard({ campaign }: CampaignCardProps) {
+  const router = useRouter();
   const progress = Math.min((campaign.raisedAmount / campaign.goalAmount) * 100, 100);
 
   const formatCurrency = (amount: number) => {
@@ -20,15 +21,26 @@ export default function CampaignCard({ campaign }: CampaignCardProps) {
   };
 
   return (
-    <div className="bg-white border border-[#e2e8f0] rounded-[24px] p-[16px] flex flex-col gap-[16px] overflow-hidden hover:shadow-[0_4px_21px_rgba(0,0,0,0.1)] transition-shadow">
+    <div
+      onClick={() => router.push(`/campaigns/${campaign.id}`)}
+      className="bg-white border border-[#e2e8f0] rounded-[16px] p-[16px] flex flex-col gap-[16px] overflow-hidden hover:shadow-[0_4px_21px_rgba(0,0,0,0.1)] transition-shadow cursor-pointer"
+    >
       {/* Campaign Title */}
-      <div className="flex flex-col gap-[4px]">
-        <h3 className="font-inter font-bold text-[20px] text-[var(--grey-800)] leading-normal">
-          {campaign.title}
-        </h3>
-        <span className="font-inter font-medium text-[16px] text-[#666d80] leading-normal">
-          {campaign.category}
-        </span>
+      <div className="flex items-start justify-between gap-[8px]">
+        <div className="flex flex-col gap-[4px]">
+          <h3 className="font-inter font-bold text-[18px] text-[#36394a] leading-normal">
+            {campaign.title}
+          </h3>
+          <span className="font-inter font-medium text-[14px] text-[#666d80] leading-normal">
+            {campaign.category}
+          </span>
+        </div>
+        {/* Status Badge */}
+        <div className="inline-flex items-center justify-center border border-[#6bc497] rounded-[8px] px-[8px] py-[4px] shrink-0">
+          <span className="font-inter font-normal text-[12px] text-[#47b881] capitalize">
+            {campaign.status}
+          </span>
+        </div>
       </div>
 
       {/* Campaign Progress */}
@@ -36,10 +48,10 @@ export default function CampaignCard({ campaign }: CampaignCardProps) {
         {/* Progress Bar Section */}
         <div className="flex flex-col gap-[8px]">
           <div className="flex justify-between items-start">
-            <span className="font-inter font-bold text-[14px] text-[var(--grey-800)] leading-normal flex-1">
+            <span className="font-inter font-bold text-[14px] text-[#36394a] leading-normal flex-1">
               Progress
             </span>
-            <span className="font-inter font-bold text-[14px] text-[var(--grey-800)] leading-normal">
+            <span className="font-inter font-bold text-[14px] text-[#36394a] leading-normal">
               {Math.round(progress)}%
             </span>
           </div>
@@ -53,35 +65,20 @@ export default function CampaignCard({ campaign }: CampaignCardProps) {
         </div>
 
         {/* Campaign Stats */}
-        <div className="flex gap-[8px] text-[16px] text-[var(--grey-800)]">
-          <div className="flex-1 flex flex-col gap-[8px]">
-            <p className="font-inter font-medium leading-normal">Goal</p>
-            <p className="font-inter font-semibold leading-normal">{formatCurrency(campaign.goalAmount)}</p>
+        <div className="flex gap-[8px] text-[#36394a]">
+          <div className="flex-1 flex flex-col gap-[6px]">
+            <p className="font-inter font-medium text-[12px] leading-normal">Goal</p>
+            <p className="font-inter font-semibold text-[14px] leading-normal">{formatCurrency(campaign.goalAmount)}</p>
           </div>
-          <div className="flex-1 flex flex-col gap-[8px]">
-            <p className="font-inter font-medium leading-normal">Raised</p>
-            <p className="font-inter font-semibold leading-normal">{formatCurrency(campaign.raisedAmount)}</p>
+          <div className="flex-1 flex flex-col gap-[6px]">
+            <p className="font-inter font-medium text-[12px] leading-normal">Raised</p>
+            <p className="font-inter font-semibold text-[14px] leading-normal">{formatCurrency(campaign.raisedAmount)}</p>
           </div>
-          <div className="flex-1 flex flex-col gap-[8px]">
-            <p className="font-inter font-medium leading-normal">End Date</p>
-            <p className="font-inter font-semibold leading-normal">{campaign.endDate}</p>
+          <div className="flex-1 flex flex-col gap-[6px]">
+            <p className="font-inter font-medium text-[12px] leading-normal">End Date</p>
+            <p className="font-inter font-semibold text-[14px] leading-normal">{campaign.endDate}</p>
           </div>
         </div>
-      </div>
-
-      {/* Campaign Action */}
-      <div className="flex justify-between items-center">
-        {/* Status Badge */}
-        <div className="border border-[#6bc497] rounded-[8px] px-[16px] py-[6px]">
-          <span className="font-['Inter_Tight'] text-[16px] text-[#47b881] capitalize leading-normal">
-            {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}
-          </span>
-        </div>
-
-        {/* Action Button */}
-        <button className="flex items-center justify-center w-[60px] h-[60px] rounded-full bg-white border border-[#e2e8f0] shrink-0 hover:bg-[var(--neutral-100)] transition-colors">
-          <ArrowUpRightIcon size={26} className="text-[var(--grey-800)]" />
-        </button>
       </div>
     </div>
   );

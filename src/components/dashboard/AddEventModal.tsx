@@ -10,6 +10,7 @@ interface AddEventModalProps {
     isOpen: boolean;
     onClose: () => void;
     event?: Event | null; // If provided, we are in Edit mode
+    onDeleteRequest?: () => void;
 }
 
 /* ── Helper: parse "10:30 AM" → "10:30" (24h) ── */
@@ -34,7 +35,7 @@ function getLocalTodayDateString(): string {
     return `${year}-${month}-${day}`;
 }
 
-export default function AddEventModal({ isOpen, onClose, event }: AddEventModalProps) {
+export default function AddEventModal({ isOpen, onClose, event, onDeleteRequest }: AddEventModalProps) {
     const isEditMode = !!event;
 
     // Form State
@@ -114,7 +115,7 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
             // Combine Date and Time into an ISO String payload
             // Default time to 00:00:00 if no start time is selected
             const timePart = startTime ? `${startTime}:00` : '00:00:00';
-            const isoDateTime = `${eventDate}T${timePart}Z`;
+            const isoDateTime = `${eventDate}T${timePart}`;
 
             const formData = new FormData();
 
@@ -322,39 +323,36 @@ export default function AddEventModal({ isOpen, onClose, event }: AddEventModalP
                     </div>
                 </div>
 
-                {/* Note */}
-                <div className="font-inter font-normal text-[12px] text-[#666d80] flex flex-col gap-[4px] w-full">
-                    <p className="leading-normal mb-0 italic">
-                        *Publish: The event will be published and visible to users immediately*
-                    </p>
-                    <p className="leading-normal mb-0 font-normal">
-                        **Save as Draft: The event will be saved as a draft and not visible to users.**
-                    </p>
-                </div>
-
                 {/* Footer Buttons */}
-                <div className="flex items-center justify-end gap-[12px] w-full">
-                    <button
-                        onClick={onClose}
-                        className="h-[44px] px-[24px] flex items-center justify-center bg-transparent font-inter font-medium text-[16px] text-[#36394a] text-center hover:bg-gray-50 transition-colors rounded-[12px]"
-                    >
-                        Cancel
-                    </button>
-                    {!isEditMode && (
+                <div className="flex items-center w-full">
+                    {isEditMode && event?.status?.toLowerCase() === 'draft' && (
                         <button
-                            onClick={() => handleSave(true)}
-                            className="h-[44px] px-[24px] flex items-center justify-center border border-[var(--border-01)] bg-transparent rounded-[12px] font-inter font-medium text-[16px] text-[var(--grey-800)] text-center hover:bg-gray-50 transition-colors"
+                            type="button"
+                            onClick={() => onDeleteRequest?.()}
+                            disabled={isSaving}
+                            className="h-[44px] px-[24px] flex items-center justify-center border border-[#ec2d30] rounded-[12px] font-inter font-medium text-[16px] text-[#ec2d30] hover:bg-red-50 transition-colors disabled:opacity-50"
                         >
-                            Save as Draft
+                            Delete
                         </button>
                     )}
-                    <button
-                        onClick={() => handleSave(false)}
-                        className="h-[44px] px-[24px] flex items-center justify-center bg-[var(--brand)] rounded-[12px] font-inter font-medium text-[16px] text-white text-center hover:bg-[#065d29] transition-colors disabled:opacity-50"
-                        disabled={isSaving}
-                    >
-                        {isSaving ? 'Saving...' : 'Publish'}
-                    </button>
+                    <div className="flex items-center gap-[12px] ml-auto">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            disabled={isSaving}
+                            className="h-[44px] px-[24px] flex items-center justify-center border border-[var(--border-01)] rounded-[12px] font-inter font-medium text-[16px] text-[var(--grey-800)] hover:bg-gray-50 transition-colors disabled:opacity-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleSave(true)}
+                            className="h-[44px] px-[24px] flex items-center justify-center bg-[var(--brand)] rounded-[12px] font-inter font-medium text-[16px] text-white hover:bg-[#065d29] transition-colors disabled:opacity-50"
+                            disabled={isSaving}
+                        >
+                            {isSaving ? 'Saving...' : 'Save'}
+                        </button>
+                    </div>
                 </div>
             </div>
         </Modal>
