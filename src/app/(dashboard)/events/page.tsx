@@ -12,15 +12,17 @@ import {
     ConfirmModal,
 } from '@/components/ui';
 import type { EventConfirmType } from '@/components/ui';
-import { Eye, Edit, Trash, Ban, Send } from 'lucide-react';
+import { Eye, Edit, Ban, Send } from 'lucide-react';
+import DraftRowActions from '@/components/ui/DraftRowActions';
+import { TrashIcon } from '@/components/ui/Icons';
 import type { Event as EventType, Announcement } from '@/types';
 import CalendarView from '@/components/dashboard/CalendarView';
 import AddEventModal from '@/components/dashboard/AddEventModal';
 import AddAnnouncementModal from '@/components/dashboard/AddAnnouncementModal';
 import AnnouncementViewModal from '@/components/dashboard/AnnouncementViewModal';
 import EventDetailsModal from '@/components/dashboard/EventDetailsModal';
-import { getEvents, cancelEvent, deleteEvent } from '@/lib/api/events';
-import { getAnnouncements, deleteAnnouncement } from '@/lib/api/announcements';
+import { getEvents, cancelEvent, deleteEvent, changeEventStatus } from '@/lib/api/events';
+import { getAnnouncements, deleteAnnouncement, changeAnnouncementStatus } from '@/lib/api/announcements';
 
 // Date/Time helper functions
 function formatDate(isoString: string) {
@@ -98,9 +100,11 @@ export default function EventsPage() {
     const [viewingAnnouncement, setViewingAnnouncement] = useState<Announcement | null>(null);
     const [cancelTarget, setCancelTarget] = useState<EventType | null>(null);
     const [deleteEventTarget, setDeleteEventTarget] = useState<EventType | null>(null);
+    const [publishEventTarget, setPublishEventTarget] = useState<EventType | null>(null);
 
     // --- Announcement Confirmation State ---
     const [deleteAnnouncementTarget, setDeleteAnnouncementTarget] = useState<Announcement | null>(null);
+    const [publishDraftAnnouncementTarget, setPublishDraftAnnouncementTarget] = useState<Announcement | null>(null);
     const [pendingAnnouncementUpdate, setPendingAnnouncementUpdate] = useState<(() => Promise<void>) | null>(null);
     const [pendingAnnouncementSend, setPendingAnnouncementSend] = useState<(() => Promise<void>) | null>(null);
 
@@ -286,6 +290,24 @@ export default function EventsPage() {
             alert("Failed to delete the event.");
             throw err;
         }
+    };
+
+    const handleConfirmPublishEvent = async () => {
+        if (!publishEventTarget?.id) return;
+        try {
+            await changeEventStatus(publishEventTarget.id, 'published');
+            fetchEvents();
+        } catch (err) {
+            console.error("Failed to publish event", err);
+            alert("Failed to publish the event.");
+            throw err;
+        }
+    };
+
+    const handleConfirmPublishDraftAnnouncement = async () => {
+        if (!publishDraftAnnouncementTarget?.id) return;
+        await changeAnnouncementStatus(publishDraftAnnouncementTarget.id, 'sent');
+        fetchAnnouncements();
     };
 
     const handleViewAnnouncement = (announcement: Announcement) => {
@@ -592,41 +614,49 @@ export default function EventsPage() {
                                                         </span>
                                                     </td>
                                                     <td className="h-[70px] px-[16px] py-[14px]">
-                                                        <div className="flex items-center gap-[12px]">
-                                                            <button
-                                                                onClick={() => handleViewEvent(event)}
-                                                                className="text-[#666d80] hover:text-[var(--brand)] transition-colors p-1 hover:bg-[var(--brand-05)] rounded"
-                                                                title="View Event"
-                                                            >
-                                                                <Eye size={20} strokeWidth={1.5} />
-                                                            </button>
-                                                            {event.status?.toLowerCase() === 'cancelled' ? (
+                                                        {event.status?.toLowerCase() === 'draft' ? (
+                                                            <DraftRowActions
+                                                                onPublish={() => setPublishEventTarget(event)}
+                                                                onEdit={() => handleEditEvent(event)}
+                                                                onDelete={() => setDeleteEventTarget(event)}
+                                                            />
+                                                        ) : (
+                                                            <div className="flex items-center gap-[12px]">
                                                                 <button
-                                                                    onClick={() => setDeleteEventTarget(event)}
-                                                                    className="text-[#666d80] hover:text-[#f64c4c] transition-colors p-1 hover:bg-[#f64c4c]/10 rounded"
-                                                                    title="Delete Event"
+                                                                    onClick={() => handleViewEvent(event)}
+                                                                    className="text-[#667085] hover:text-[var(--brand)] transition-colors"
+                                                                    title="View Event"
                                                                 >
-                                                                    <Trash size={20} strokeWidth={1.5} />
+                                                                    <Eye size={20} strokeWidth={1.5} />
                                                                 </button>
-                                                            ) : (
-                                                                <>
+                                                                {event.status?.toLowerCase() === 'cancelled' ? (
                                                                     <button
-                                                                        onClick={() => handleEditEvent(event)}
-                                                                        className="text-[#666d80] hover:text-[var(--brand)] transition-colors p-1 hover:bg-[var(--brand-05)] rounded"
-                                                                        title="Edit Event"
+                                                                        onClick={() => setDeleteEventTarget(event)}
+                                                                        className="text-[#eb6f70] hover:opacity-80 transition-opacity"
+                                                                        title="Delete Event"
                                                                     >
-                                                                        <Edit size={20} strokeWidth={1.5} />
+                                                                        <TrashIcon size={20} />
                                                                     </button>
-                                                                    <button
-                                                                        onClick={() => requestCancelEvent(event)}
-                                                                        className="text-[#666d80] hover:text-[#f64c4c] transition-colors p-1 hover:bg-[#f64c4c]/10 rounded"
-                                                                        title="Cancel Event"
-                                                                    >
-                                                                        <Ban size={20} strokeWidth={1.5} />
-                                                                    </button>
-                                                                </>
-                                                            )}
-                                                        </div>
+                                                                ) : (
+                                                                    <>
+                                                                        <button
+                                                                            onClick={() => handleEditEvent(event)}
+                                                                            className="text-[#667085] hover:text-[var(--brand)] transition-colors"
+                                                                            title="Edit Event"
+                                                                        >
+                                                                            <Edit size={20} strokeWidth={1.5} />
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => requestCancelEvent(event)}
+                                                                            className="text-[#eb6f70] hover:opacity-80 transition-opacity"
+                                                                            title="Cancel Event"
+                                                                        >
+                                                                            <Ban size={20} strokeWidth={1.5} />
+                                                                        </button>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        )}
                                                     </td>
                                                 </tr>
                                             ))}
@@ -773,31 +803,39 @@ export default function EventsPage() {
                                             </span>
                                         </td>
                                         <td className="h-[70px] px-[16px] py-[22px]">
-                                            <div className="flex items-center gap-[12px]">
-                                                {announcement.status === 'sent' && (
+                                            {announcement.status === 'draft' ? (
+                                                <DraftRowActions
+                                                    onPublish={() => setPublishDraftAnnouncementTarget(announcement)}
+                                                    onEdit={() => handleEditAnnouncement(announcement)}
+                                                    onDelete={() => handleDeleteAnnouncement(announcement)}
+                                                />
+                                            ) : (
+                                                <div className="flex items-center gap-[12px]">
+                                                    {announcement.status === 'sent' && (
+                                                        <button
+                                                            onClick={() => handleViewAnnouncement(announcement)}
+                                                            className="text-[#667085] hover:text-[var(--brand)] transition-colors"
+                                                            title="View"
+                                                        >
+                                                            <Eye size={20} strokeWidth={1.5} />
+                                                        </button>
+                                                    )}
                                                     <button
-                                                        onClick={() => handleViewAnnouncement(announcement)}
-                                                        className="text-[#666d80] hover:text-[var(--brand)] transition-colors p-1 hover:bg-[var(--brand-05)] rounded"
-                                                        title="View"
+                                                        onClick={() => handleEditAnnouncement(announcement)}
+                                                        className="text-[#667085] hover:text-[var(--brand)] transition-colors"
+                                                        title="Edit"
                                                     >
-                                                        <Eye size={20} strokeWidth={1.5} />
+                                                        <Edit size={20} strokeWidth={1.5} />
                                                     </button>
-                                                )}
-                                                <button
-                                                    onClick={() => handleEditAnnouncement(announcement)}
-                                                    className="text-[#666d80] hover:text-[var(--brand)] transition-colors p-1 hover:bg-[var(--brand-05)] rounded"
-                                                    title="Edit"
-                                                >
-                                                    <Edit size={20} strokeWidth={1.5} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeleteAnnouncement(announcement)}
-                                                    className="text-[#666d80] hover:text-[#f64c4c] transition-colors p-1 hover:bg-[#f64c4c]/10 rounded"
-                                                    title="Delete"
-                                                >
-                                                    <Trash size={20} strokeWidth={1.5} />
-                                                </button>
-                                            </div>
+                                                    <button
+                                                        onClick={() => handleDeleteAnnouncement(announcement)}
+                                                        className="text-[#eb6f70] hover:opacity-80 transition-opacity"
+                                                        title="Delete"
+                                                    >
+                                                        <TrashIcon size={20} />
+                                                    </button>
+                                                </div>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
@@ -845,6 +883,13 @@ export default function EventsPage() {
                 isOpen={isAddModalOpen}
                 onClose={handleCloseAddModal}
                 event={editingEvent}
+                onDeleteRequest={() => {
+                    if (editingEvent) {
+                        setIsAddModalOpen(false);
+                        setEditingEvent(null);
+                        setDeleteEventTarget(editingEvent);
+                    }
+                }}
             />
             <EventDetailsModal
                 isOpen={!!viewEvent}
@@ -888,6 +933,34 @@ export default function EventsPage() {
                 description="This cancelled event will be permanently deleted and cannot be recovered."
                 confirmLabel="Delete"
                 submittingLabel="Deleting..."
+            />
+            {/* Publish draft event confirmation */}
+            <ConfirmModal
+                isOpen={!!publishEventTarget}
+                eventType="draft"
+                onClose={() => setPublishEventTarget(null)}
+                onConfirm={handleConfirmPublishEvent}
+                title="Publish Event?"
+                description="This event will be published and visible to all members in the Community App."
+                confirmLabel="Publish"
+                submittingLabel="Publishing..."
+                confirmVariant="primary"
+                iconNode={<Send size={24} className="text-white" strokeWidth={1.5} />}
+                iconContainerClassName="bg-[rgba(7,119,52,0.7)] border-[rgba(7,119,52,0.2)]"
+            />
+            {/* Publish draft announcement confirmation */}
+            <ConfirmModal
+                isOpen={!!publishDraftAnnouncementTarget}
+                eventType="draft"
+                onClose={() => setPublishDraftAnnouncementTarget(null)}
+                onConfirm={handleConfirmPublishDraftAnnouncement}
+                title="Send Announcement?"
+                description="This announcement will be sent immediately to all members in the Community App."
+                confirmLabel="Send Now"
+                submittingLabel="Sending..."
+                confirmVariant="primary"
+                iconNode={<Send size={24} className="text-white" strokeWidth={1.5} />}
+                iconContainerClassName="bg-[rgba(7,119,52,0.7)] border-[rgba(7,119,52,0.2)]"
             />
             {/* Delete announcement confirmation */}
             <ConfirmModal

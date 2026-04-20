@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -14,6 +14,8 @@ import {
 } from '@/components/ui/Icons';
 import { useAuth } from '@/contexts/AuthContext';
 import ProfileModal from './ProfileModal';
+import NotificationDrawer from './NotificationDrawer';
+import type { Notification } from '@/lib/api/notifications';
 
 interface NavItemProps {
   label: string;
@@ -46,7 +48,13 @@ export default function Header({ activeNav = 'dashboard' }: HeaderProps) {
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState<number | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const handleNotificationsLoaded = useCallback((notifications: Notification[]) => {
+    setUnreadCount(notifications.filter((n) => !n.is_read).length);
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -88,9 +96,25 @@ export default function Header({ activeNav = 'dashboard' }: HeaderProps) {
           </nav>
 
           <div className="flex items-center gap-[24px]">
-            <button className="relative p-0 hover:opacity-80 transition-opacity">
+            <button
+              onClick={() => setShowNotifications(true)}
+              className="relative p-0 hover:opacity-80 transition-opacity"
+              aria-label="Open notifications"
+            >
               <BellIcon size={20} className="text-[var(--grey-800)]" />
-              <span className="absolute -top-0.5 -right-0.5 w-[9px] h-[9px] bg-[#ff8156] border-[1.5px] border-[var(--table-white)] rounded-full" />
+              {(unreadCount === null || unreadCount > 0) && (
+                <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center bg-[#ff8156] border-[1.5px] border-[var(--table-white)] rounded-full text-white font-inter font-semibold leading-none"
+                  style={
+                    unreadCount !== null && unreadCount > 0
+                      ? { fontSize: 9, minWidth: 16, height: 16, padding: '0 3px' }
+                      : { width: 9, height: 9 }
+                  }
+                >
+                  {unreadCount !== null && unreadCount > 0
+                    ? unreadCount > 9 ? '9+' : unreadCount
+                    : null}
+                </span>
+              )}
             </button>
 
             <div className="relative" ref={dropdownRef}>
@@ -144,6 +168,12 @@ export default function Header({ activeNav = 'dashboard' }: HeaderProps) {
         onClose={() => setShowProfileModal(false)}
         onLogout={logout}
         user={user}
+      />
+
+      <NotificationDrawer
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
+        onLoad={handleNotificationsLoaded}
       />
     </>
   );

@@ -92,9 +92,9 @@ const RowActions = ({
     case 'active':
     case 'paused':
       return (
-        <div className="flex items-center gap-[10px]">
-          <Link href={`/campaigns/${campaign.id}`} className="text-[#667085] hover:text-[var(--brand)] transition-colors"><EyeIcon size={20} /></Link>
-          <button onClick={() => onEditClick(campaign)} className="text-[#667085] hover:text-[var(--brand)] transition-colors"><EditIcon size={20} /></button>
+        <div className="flex items-center gap-[12px]">
+          <Link href={`/campaigns/${campaign.id}`} title="View" className="text-[#667085] hover:text-[var(--brand)] transition-colors"><EyeIcon size={20} /></Link>
+          <button onClick={() => onEditClick(campaign)} title="Edit" className="text-[#667085] hover:text-[var(--brand)] transition-colors"><EditIcon size={20} /></button>
           <span className="relative flex items-center justify-center w-[20px] h-[20px]" title="Live">
             <span className="animate-ping absolute inline-flex h-[10px] w-[10px] rounded-full bg-[#eb6f70] opacity-75" />
             <span className="relative inline-flex h-[8px] w-[8px] rounded-full bg-[#f64c4c]" />
@@ -104,17 +104,17 @@ const RowActions = ({
     case 'completed':
     case 'cancelled':
       return (
-        <div className="flex items-center gap-[10px]">
-          <Link href={`/campaigns/${campaign.id}`} className="text-[#667085] hover:text-[var(--brand)] transition-colors"><EyeIcon size={20} /></Link>
+        <div className="flex items-center gap-[12px]">
+          <Link href={`/campaigns/${campaign.id}`} title="View" className="text-[#667085] hover:text-[var(--brand)] transition-colors"><EyeIcon size={20} /></Link>
           <button onClick={() => downloadDonorPdf(campaign)} title="Download Donor Report" className="text-[#667085] hover:text-[var(--brand)] transition-colors"><DownloadIcon size={20} /></button>
         </div>
       );
     case 'draft':
       return (
-        <div className="flex items-center gap-[10px]">
+        <div className="flex items-center gap-[12px]">
           <button onClick={() => onPublishClick(campaign)} title="Publish" className="text-[var(--brand)] hover:opacity-80 transition-opacity"><SendIcon size={18} /></button>
-          <button onClick={() => onEditClick(campaign)} className="text-[#667085] hover:text-[var(--brand)] transition-colors"><EditIcon size={20} /></button>
-          <button onClick={() => onDeleteClick(campaign)} className="text-[#eb6f70] hover:opacity-80 transition-opacity"><TrashIcon size={20} /></button>
+          <button onClick={() => onEditClick(campaign)} title="Edit" className="text-[#667085] hover:text-[var(--brand)] transition-colors"><EditIcon size={20} /></button>
+          <button onClick={() => onDeleteClick(campaign)} title="Delete" className="text-[#eb6f70] hover:opacity-80 transition-opacity"><TrashIcon size={20} /></button>
         </div>
       );
     default:
@@ -147,10 +147,8 @@ export default function CampaignTable() {
       setTotalItems(result.pagination.totalElements);
       setTotalPages(result.pagination.totalPages);
       setCurrentPage(page);
-    } catch (err: any) {
-      const msg = err?.message || 'Failed to load campaigns.';
-      setFetchError(msg);
-      console.warn('Failed to fetch campaigns:', msg);
+    } catch {
+      setFetchError('Failed to load campaigns. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -318,6 +316,11 @@ export default function CampaignTable() {
           onUpdated={async () => {
             await fetchCampaigns(currentPage);
             setEditTarget(null);
+          }}
+          onDeleteRequest={() => {
+            const target = editTarget;
+            setEditTarget(null);
+            setDeleteTarget(target);
           }}
         />
       )}
