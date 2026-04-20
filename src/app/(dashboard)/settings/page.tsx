@@ -240,8 +240,7 @@ function SettingsPageContent() {
       setLoading(true);
       const data = await getSettings();
       populateForm(data);
-    } catch (err) {
-      console.error('Failed to load settings:', err);
+    } catch {
       setToast({ message: 'Failed to load settings', type: 'error' });
     } finally {
       setLoading(false);
@@ -564,7 +563,7 @@ function SettingsPageContent() {
                   {facilities.wuduFacilities && (
                     <div className="relative ml-[28px]">
                       <select
-                        className="form-field h-[44px] appearance-none text-[14px] text-[#1f1f1f] font-inter font-medium"
+                        className="form-field h-[48px] appearance-none text-[14px] text-[#1f1f1f] font-inter font-medium"
                         value={wuduType}
                         onChange={(e) => setWuduType(e.target.value as 'Men' | 'Women' | 'Both')}
                       >

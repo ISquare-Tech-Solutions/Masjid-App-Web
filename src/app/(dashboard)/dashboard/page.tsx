@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { CalendarDays, Megaphone } from 'lucide-react';
 import DateHeader from '@/components/dashboard/DateHeader';
 import PrayerTimeCard from '@/components/dashboard/PrayerTimeCard';
 import JummahCard from '@/components/dashboard/JummahCard';
@@ -13,8 +14,11 @@ import AddEventModal from '@/components/dashboard/AddEventModal';
 import AddAnnouncementModal from '@/components/dashboard/AddAnnouncementModal';
 import AddCampaignModal from '@/app/(dashboard)/campaigns/components/AddCampaignModal';
 import UpdatePrayerTimeModal from '@/components/prayer-management/UpdatePrayerTimeModal';
+import Link from 'next/link';
 import type { PrayerTime, Event, Campaign } from '@/types';
 import { getPrayerTimes } from '@/lib/api/prayer-times';
+import { getEvents } from '@/lib/api/events';
+import { getCampaigns } from '@/lib/api/campaigns';
 import type { PrayerTimeResponse, PrayersData, JumuahTimeEntry } from '@/types/prayer-times';
 
 // Helper to format date key YYYY-MM-DD
@@ -34,68 +38,6 @@ function formatTime12h(time24: string | undefined): string {
   return `${hours}:${minutes} ${ampm}`;
 }
 
-// ... (Events and Campaigns constants remain unchanged) ...
-const upcomingEvents: Event[] = [
-  {
-    id: '1',
-    title: 'Friday Community Gathering',
-    category: 'Community Event',
-    description:
-      'A casual community meet-up after Isha Prayer to discuss upcoming activities and strength our bonds as a community...',
-    speaker: 'Ustadh Sultan Ahmed',
-    venue: 'Masjid Abu Bakar',
-    date: '17 Oct 2025',
-    startTime: '07:00 PM',
-    endTime: '08:30 PM',
-    status: 'sent',
-  },
-  {
-    id: '2',
-    title: 'Friday Community Gathering',
-    category: 'Community Event',
-    description:
-      'A casual community meet-up after Isha Prayer to discuss upcoming activities and strength our bonds as a community...',
-    speaker: 'Ustadh Sultan Ahmed',
-    venue: 'Masjid Abu Bakar',
-    date: '17 Oct 2025',
-    startTime: '07:00 PM',
-    endTime: '08:30 PM',
-    status: 'sent',
-  },
-];
-
-const activeCampaigns: Campaign[] = [
-  {
-    id: '1',
-    title: 'Help Build New Wudu Area',
-    category: 'Masjid Development',
-    goalAmount: 15000,
-    raisedAmount: 10500,
-    startDate: '2025-01-01',
-    endDate: '05 Dec 2025',
-    status: 'active',
-  },
-  {
-    id: '2',
-    title: 'Sponsor a student for Education',
-    category: "Education & dawa'h",
-    goalAmount: 15000,
-    raisedAmount: 10500,
-    startDate: '2025-01-01',
-    endDate: '05 Dec 2025',
-    status: 'active',
-  },
-  {
-    id: '3',
-    title: 'Emergency Support for brother Yusuf',
-    category: 'Help a Brother or Sister',
-    goalAmount: 15000,
-    raisedAmount: 10500,
-    startDate: '2025-01-01',
-    endDate: '05 Dec 2025',
-    status: 'active',
-  },
-];
 
 const PRAYER_NAMES: (keyof PrayersData)[] = ['fajr', 'sunrise', 'zuhr', 'asr', 'maghrib', 'isha'];
 const PRAYER_LABELS: Record<string, string> = {
@@ -112,6 +54,13 @@ export default function DashboardPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [prayerData, setPrayerData] = useState<PrayerTimeResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [prayerFetchError, setPrayerFetchError] = useState(false);
+
+  // Events & Campaigns state
+  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
+  const [activeCampaigns, setActiveCampaigns] = useState<Campaign[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [campaignsLoading, setCampaignsLoading] = useState(true);
 
   // Quick action modal states
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
@@ -123,9 +72,40 @@ export default function DashboardPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
 
+  // Fetch upcoming events (max 3) — format date/time same as the events tab
+  useEffect(() => {
+    setEventsLoading(true);
+    getEvents({ upcoming: true, status: 'published', size: 3 })
+      .then(res => {
+        const processed = res.content.slice(0, 3).map(evt => ({
+          ...evt,
+          date: evt.date
+            ? new Date(evt.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+            : '',
+          startTime: evt.date
+            ? new Date(evt.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+            : '',
+          endTime: '',
+        }));
+        setUpcomingEvents(processed);
+      })
+      .catch(() => setUpcomingEvents([]))
+      .finally(() => setEventsLoading(false));
+  }, []);
+
+  // Fetch active campaigns (max 3)
+  useEffect(() => {
+    setCampaignsLoading(true);
+    getCampaigns({ size: 10 })
+      .then(res => setActiveCampaigns(res.content.filter(c => c.status === 'active').slice(0, 3)))
+      .catch(() => setActiveCampaigns([]))
+      .finally(() => setCampaignsLoading(false));
+  }, []);
+
   // Fetch prayer times when month/year changes
   const fetchPrayerTimes = useCallback(async () => {
     setLoading(true);
+    setPrayerFetchError(false);
     try {
       const startDate = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-01`;
       const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -135,6 +115,7 @@ export default function DashboardPage() {
       setPrayerData(result.content);
     } catch (error) {
       console.error('Failed to fetch prayer times', error);
+      setPrayerFetchError(true);
     } finally {
       setLoading(false);
     }
@@ -265,7 +246,22 @@ export default function DashboardPage() {
               return <PrayerTimeCard key={prayer.name} prayer={prayer} />;
             })
           ) : (
-            <p className="text-gray-500 py-10 w-full text-center">No prayer times found for this date.</p>
+            <div className="flex flex-col items-center justify-center gap-[12px] py-[32px] w-full">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#077734" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.5">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+              <p className="font-inter font-medium text-[14px] text-[#666d80] text-center">
+                {prayerFetchError ? 'Failed to load prayer times. Please refresh.' : 'No prayer times set for this date.'}
+              </p>
+              {!prayerFetchError && (
+                <Link
+                  href="/prayer-management"
+                  className="flex items-center gap-[8px] h-[36px] px-[16px] bg-[var(--brand)] text-white text-[13px] font-medium font-inter rounded-[8px] hover:bg-[#046c4e] transition-colors"
+                >
+                  Add Prayer Times
+                </Link>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -289,11 +285,41 @@ export default function DashboardPage() {
         <h2 className="font-inter font-semibold text-[20px] text-[var(--grey-800)] mb-[16px]">
           Upcoming Events
         </h2>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-[24px]">
-          {upcomingEvents.map((event) => (
-            <EventCard key={event.id} event={event} />
-          ))}
-        </div>
+        {eventsLoading ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-[24px]">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="rounded-[16px] bg-white border border-[#e2e8f0] p-[16px] h-[160px]">
+                <Skeleton className="h-5 w-2/3 mb-3" />
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-4 w-4/5" />
+              </div>
+            ))}
+          </div>
+        ) : upcomingEvents.length > 0 ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-[24px]">
+            {upcomingEvents.map((event) => (
+              <EventCard key={event.id} event={event} />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-[16px] bg-[#fafbfb] border border-dashed border-[#e2e8f0] rounded-[24px] p-[24px] w-full">
+            <div className="flex items-center justify-center size-[48px] rounded-full bg-white border border-[#e2e8f0]">
+              <CalendarDays className="size-[24px] text-[var(--brand-brand,#077734)]" />
+            </div>
+            <div className="flex flex-col items-center gap-[8px]">
+              <p className="font-bold text-[20px] text-[var(--grey-800,#36394a)]">No Upcoming Events</p>
+              <p className="font-medium text-[16px] text-[var(--grey-100,#666d80)] text-center max-w-[374px]">
+                There are no events scheduled yet. Start by creating your first community event.
+              </p>
+            </div>
+            <button
+              onClick={() => setIsAddEventOpen(true)}
+              className="flex items-center justify-center h-[44px] px-[24px] bg-[var(--brand-brand,#077734)] text-white font-medium text-[16px] rounded-[12px]"
+            >
+              Create Event
+            </button>
+          </div>
+        )}
       </section>
 
       {/* Active Campaigns Section */}
@@ -301,11 +327,41 @@ export default function DashboardPage() {
         <h2 className="font-inter font-semibold text-[20px] text-[var(--grey-800)] mb-[16px]">
           Active Campaigns
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[24px]">
-          {activeCampaigns.map((campaign) => (
-            <CampaignCard key={campaign.id} campaign={campaign} />
-          ))}
-        </div>
+        {campaignsLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[24px]">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="rounded-[16px] bg-white border border-[#e2e8f0] p-[24px] h-[160px]">
+                <Skeleton className="h-5 w-2/3 mb-3" />
+                <Skeleton className="h-4 w-full mb-2" />
+                <Skeleton className="h-3 w-full mt-4" />
+              </div>
+            ))}
+          </div>
+        ) : activeCampaigns.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[24px]">
+            {activeCampaigns.map((campaign) => (
+              <CampaignCard key={campaign.id} campaign={campaign} />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-[16px] bg-[#fafbfb] border border-dashed border-[#e2e8f0] rounded-[24px] p-[24px] w-full">
+            <div className="flex items-center justify-center size-[48px] rounded-full bg-white border border-[#e2e8f0]">
+              <Megaphone className="size-[24px] text-[var(--brand-brand,#077734)]" />
+            </div>
+            <div className="flex flex-col items-center gap-[8px]">
+              <p className="font-bold text-[20px] text-[var(--grey-800,#36394a)]">No Active Campaigns</p>
+              <p className="font-medium text-[16px] text-[var(--grey-100,#666d80)] text-center max-w-[374px]">
+                There are no active campaigns at the moment. Start by creating a new fundraising campaign.
+              </p>
+            </div>
+            <button
+              onClick={() => setIsAddCampaignOpen(true)}
+              className="flex items-center justify-center h-[44px] px-[24px] bg-[var(--brand-brand,#077734)] text-white font-medium text-[16px] rounded-[12px]"
+            >
+              Create Campaign
+            </button>
+          </div>
+        )}
       </section>
 
       {/* Quick Action Modals */}

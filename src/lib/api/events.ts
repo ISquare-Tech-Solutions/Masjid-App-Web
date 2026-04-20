@@ -67,10 +67,10 @@ export async function updateEvent(id: string, formData: FormData): Promise<Event
 }
 
 /**
- * Change the status of an event
+ * Publish a draft event
  */
 export async function changeEventStatus(id: string, status: string): Promise<Event> {
-    const response = await put<ApiResponse<Event>>(`/admin/events/${id}/status`, { status });
+    const response = await put<ApiResponse<Event>>(`/admin/events/${id}/publish`, {});
     return response.data;
 }
 
